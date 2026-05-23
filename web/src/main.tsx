@@ -125,7 +125,25 @@ function App() {
         <section className="results-grid">
           <div className="image-pane">
             {previewUrl ? (
-              <img src={previewUrl} alt="Selected upload preview" />
+              <div className="preview-stack">
+                <img src={previewUrl} alt="Selected upload preview" />
+                {file && (
+                  <dl className="file-meta">
+                    <div>
+                      <dt>File</dt>
+                      <dd>{file.name}</dd>
+                    </div>
+                    <div>
+                      <dt>Type</dt>
+                      <dd>{file.type || "unknown"}</dd>
+                    </div>
+                    <div>
+                      <dt>Size</dt>
+                      <dd>{formatBytes(file.size)}</dd>
+                    </div>
+                  </dl>
+                )}
+              </div>
             ) : (
               <div className="empty-state">No image selected</div>
             )}
@@ -189,6 +207,12 @@ function SignalList({ signals }: { signals: AnalyzeResponse["signals"] }) {
             <div>
               <h3>{label}</h3>
               <p>{signal.summary}</p>
+              {Object.keys(signal.details).length > 0 && (
+                <details className="signal-details">
+                  <summary>Details</summary>
+                  <pre>{JSON.stringify(signal.details, null, 2)}</pre>
+                </details>
+              )}
             </div>
             <span className={signal.detected ? "badge badge-detected" : "badge"}>
               {signal.status}
@@ -200,9 +224,14 @@ function SignalList({ signals }: { signals: AnalyzeResponse["signals"] }) {
   );
 }
 
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
 );
-

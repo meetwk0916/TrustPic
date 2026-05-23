@@ -12,7 +12,8 @@ The current implementation includes:
 - Single-image upload validation for JPG, PNG, and WebP MIME types.
 - Evidence modules for C2PA read attempts, GB 45438/AIGC byte-marker scan, EXIF summary, and ELA heatmap generation.
 - Evidence-first report contract with verdict, summary, signals, limitations, recommendation, and `assets.ela_heatmap_data_url`.
-- React + Vite Web UI for selecting an image, previewing it, calling the backend, and displaying the report and ELA heatmap.
+- React + Vite Web UI for selecting an image, previewing it, showing file metadata, calling the backend, and displaying the report, signal details, and ELA heatmap.
+- Local sample-image generator for repeatable smoke checks.
 - CodeGraph index initialized for the project.
 - Git repository initialized and pushed to `origin/main`.
 
@@ -27,6 +28,15 @@ cd backend
 
 Result: `3 passed`.
 
+Validated again after negative-path coverage was added:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `8 passed`.
+
 ```bash
 cd web
 npm run build
@@ -39,6 +49,8 @@ Manual smoke checks also passed:
 - Backend `GET /api/v1/health` returned `{"status":"ok"}`.
 - Frontend dev server returned HTTP 200 at `http://127.0.0.1:5173/`.
 - A temporary PNG upload to `POST /api/v1/analyze` returned a complete `success` report with all four signal sections.
+- Generated smoke samples are documented in `docs/SAMPLE_VERIFICATION.md`.
+- Generated `plain.png`, `marked-aigc.png`, and `edited-compressed.jpg` were uploaded to the local API; all returned `success`, and `marked-aigc.png` returned `supported_signal_detected`.
 
 ## Git And Index
 
@@ -64,8 +76,7 @@ The v0 goal is not complete until the success criteria in `docs/V0_GOALS.md` are
 
 Highest-priority gaps:
 
-- Add API tests for oversized files, undecodable image bytes, and dimension limits.
-- Add fixtures or manual verification records for:
+- Add real fixtures or manual verification records for:
   - camera image with EXIF
   - metadata-stripped image
   - C2PA sample, if available
@@ -78,8 +89,7 @@ Highest-priority gaps:
 
 Start with backend confidence before expanding product surface:
 
-1. Add missing negative-path API tests.
-2. Create `backend/tests/fixtures/` with small image samples or generated fixtures.
-3. Add a manual sample verification note under `docs/samples/`.
-4. Re-run backend tests and frontend build.
-5. Commit the v0 progress alignment and test coverage updates.
+1. Run the generated sample smoke path in `docs/SAMPLE_VERIFICATION.md`.
+2. Add real sample evidence for EXIF, C2PA, and edited/compressed files.
+3. Re-run backend tests and frontend build.
+4. Commit the v0 sample verification results.
