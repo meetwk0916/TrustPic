@@ -9,6 +9,7 @@ The v0 goal is not to prove whether every image is real or AI-generated. The v0 
 - [NotebookLM source](docs/notebooklm-ai-image-detection-spec-prototype.md)
 - [v0 goals](docs/V0_GOALS.md)
 - [technical stack](docs/TECH_STACK.md)
+- [current progress](docs/PROGRESS.md)
 
 ## Local Development
 
