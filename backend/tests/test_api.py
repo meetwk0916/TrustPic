@@ -1,7 +1,7 @@
 from io import BytesIO
 
 from fastapi.testclient import TestClient
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from app.services import analyze as analyze_service
 from app.main import app
@@ -13,6 +13,29 @@ def _png_bytes(size: tuple[int, int] = (64, 64)) -> bytes:
     image = Image.new("RGB", size, color=(120, 40, 80))
     out = BytesIO()
     image.save(out, format="PNG")
+    return out.getvalue()
+
+
+def _jpeg_with_exif_bytes() -> bytes:
+    image = Image.new("RGB", (80, 80), color=(96, 132, 166))
+    exif = Image.Exif()
+    exif[271] = "TrustPic Camera"
+    exif[272] = "V0 EXIF Sample"
+    out = BytesIO()
+    image.save(out, format="JPEG", quality=92, exif=exif)
+    return out.getvalue()
+
+
+def _ela_review_jpeg_bytes() -> bytes:
+    image = Image.new("RGB", (160, 120), color=(255, 255, 255))
+    draw = ImageDraw.Draw(image)
+    for x in range(0, 160, 4):
+        color = (0, 0, 0) if x % 8 == 0 else (255, 255, 255)
+        draw.rectangle((x, 0, x + 3, 120), fill=color)
+    for y in range(0, 120, 8):
+        draw.line((0, y, 159, y), fill=(220, 30, 30), width=1)
+    out = BytesIO()
+    image.save(out, format="JPEG", quality=35)
     return out.getvalue()
 
 
@@ -105,3 +128,31 @@ def test_gb45438_marker_changes_verdict_to_supported_signal() -> None:
     assert payload["verdict"] == "supported_signal_detected"
     assert payload["signals"]["gb45438"]["detected"] is True
     assert payload["signals"]["gb45438"]["details"]["matched_terms"] == ["AI_GENERATED"]
+
+
+def test_exif_jpeg_reports_metadata_fields() -> None:
+    response = client.post(
+        "/api/v1/analyze",
+        files={"file": ("camera.jpg", _jpeg_with_exif_bytes(), "image/jpeg")},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    exif = payload["signals"]["exif"]
+    assert exif["detected"] is True
+    assert exif["status"] == "present"
+    assert exif["details"]["fields"]["Make"] == "TrustPic Camera"
+    assert exif["details"]["fields"]["Model"] == "V0 EXIF Sample"
+
+
+def test_high_error_jpeg_returns_review_recommended() -> None:
+    response = client.post(
+        "/api/v1/analyze",
+        files={"file": ("ela-review.jpg", _ela_review_jpeg_bytes(), "image/jpeg")},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["verdict"] == "review_recommended"
+    assert payload["signals"]["ela"]["detected"] is True
+    assert payload["signals"]["ela"]["status"] == "review"

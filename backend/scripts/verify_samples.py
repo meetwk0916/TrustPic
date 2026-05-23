@@ -1,6 +1,7 @@
 import argparse
 import json
 import mimetypes
+import sys
 from pathlib import Path
 from urllib.request import urlretrieve
 
@@ -15,6 +16,68 @@ PUBLIC_C2PA_SAMPLES = {
         "source": "contentauth/c2pa-attacks sample/C.jpg",
         "note": "Public Content Credentials test image with a self-signed/untrusted test certificate.",
     }
+}
+
+EXPECTED_RESULTS = {
+    "plain.png": {
+        "status_code": 200,
+        "verdict": "no_supported_signal_found",
+        "c2pa_detected": False,
+        "gb45438_detected": False,
+        "exif_detected": False,
+        "ela_status": "low_signal",
+        "has_ela_heatmap": True,
+    },
+    "marked-aigc.png": {
+        "status_code": 200,
+        "verdict": "supported_signal_detected",
+        "c2pa_detected": False,
+        "gb45438_detected": True,
+        "exif_detected": False,
+        "ela_status": "low_signal",
+        "has_ela_heatmap": True,
+    },
+    "camera-exif.jpg": {
+        "status_code": 200,
+        "c2pa_detected": False,
+        "gb45438_detected": False,
+        "exif_detected": True,
+        "ela_status": "low_signal",
+        "has_ela_heatmap": True,
+    },
+    "metadata-stripped.jpg": {
+        "status_code": 200,
+        "c2pa_detected": False,
+        "gb45438_detected": False,
+        "exif_detected": False,
+        "ela_status": "low_signal",
+        "has_ela_heatmap": True,
+    },
+    "edited-compressed.jpg": {
+        "status_code": 200,
+        "c2pa_detected": False,
+        "gb45438_detected": False,
+        "exif_detected": False,
+        "ela_status": "low_signal",
+        "has_ela_heatmap": True,
+    },
+    "ela-review-compressed.jpg": {
+        "status_code": 200,
+        "verdict": "review_recommended",
+        "c2pa_detected": False,
+        "gb45438_detected": False,
+        "exif_detected": False,
+        "ela_status": "review",
+        "has_ela_heatmap": True,
+    },
+    "c2pa-attacks-C.jpg": {
+        "status_code": 200,
+        "verdict": "supported_signal_detected",
+        "c2pa_detected": True,
+        "c2pa_validation_state": "Valid",
+        "gb45438_detected": False,
+        "has_ela_heatmap": True,
+    },
 }
 
 
@@ -39,7 +102,10 @@ def main() -> None:
         sample_paths.extend(download_public_samples(output_dir))
 
     results = [verify_sample(path) for path in sample_paths]
-    print(json.dumps({"output_dir": str(output_dir), "results": results}, indent=2))
+    failures = validate_results(results)
+    print(json.dumps({"output_dir": str(output_dir), "results": results, "failures": failures}, indent=2))
+    if failures:
+        sys.exit(1)
 
 
 def download_public_samples(output_dir: Path) -> list[Path]:
@@ -65,6 +131,7 @@ def verify_sample(path: Path) -> dict:
     signals = payload.get("signals", {}) if isinstance(payload, dict) else {}
     c2pa = signals.get("c2pa", {}) if isinstance(signals, dict) else {}
     gb45438 = signals.get("gb45438", {}) if isinstance(signals, dict) else {}
+    exif = signals.get("exif", {}) if isinstance(signals, dict) else {}
     ela = signals.get("ela", {}) if isinstance(signals, dict) else {}
 
     return {
@@ -78,11 +145,30 @@ def verify_sample(path: Path) -> dict:
         if isinstance(c2pa.get("details"), dict)
         else None,
         "gb45438_detected": gb45438.get("detected"),
+        "exif_detected": exif.get("detected"),
+        "exif_field_count": exif.get("details", {}).get("field_count")
+        if isinstance(exif.get("details"), dict)
+        else None,
         "ela_status": ela.get("status"),
+        "ela_mean_error": ela.get("details", {}).get("mean_error")
+        if isinstance(ela.get("details"), dict)
+        else None,
         "has_ela_heatmap": bool(payload.get("assets", {}).get("ela_heatmap_data_url"))
         if isinstance(payload, dict)
         else False,
     }
+
+
+def validate_results(results: list[dict]) -> list[str]:
+    failures = []
+    for result in results:
+        expected = EXPECTED_RESULTS.get(result["file"], {})
+        for key, expected_value in expected.items():
+            if result.get(key) != expected_value:
+                failures.append(
+                    f"{result['file']}: expected {key}={expected_value!r}, got {result.get(key)!r}"
+                )
+    return failures
 
 
 if __name__ == "__main__":
