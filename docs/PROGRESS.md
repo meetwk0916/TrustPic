@@ -37,6 +37,15 @@ cd backend
 
 Result: `8 passed`.
 
+Validated again after public C2PA sample verification and C2PA false-positive coverage were added:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `9 passed`.
+
 ```bash
 cd web
 npm run build
@@ -51,13 +60,14 @@ Manual smoke checks also passed:
 - A temporary PNG upload to `POST /api/v1/analyze` returned a complete `success` report with all four signal sections.
 - Generated smoke samples are documented in `docs/SAMPLE_VERIFICATION.md`.
 - Generated `plain.png`, `marked-aigc.png`, and `edited-compressed.jpg` were uploaded to the local API; all returned `success`, and `marked-aigc.png` returned `supported_signal_detected`.
+- `scripts/verify_samples.py --download-public` verified public `contentauth/c2pa-attacks` sample `C.jpg` with `c2pa_status: detected` and `c2pa_validation_state: Valid`.
 
 ## Git And Index
 
 - Remote: `https://github.com/meetwk0916/TrustPic`
 - Branch: `main`
 - Initial commit: `dfb0104 Initial TrustPic v0 prototype`
-- CodeGraph status: up to date, 13 indexed files, 81 nodes, 129 edges.
+- CodeGraph status: up to date, 16 indexed code files, 118 nodes, 183 edges.
 
 ## Not Blocked By API Quota
 
@@ -79,17 +89,16 @@ Highest-priority gaps:
 - Add real fixtures or manual verification records for:
   - camera image with EXIF
   - metadata-stripped image
-  - C2PA sample, if available
+  - production C2PA sample from a real tool or device
   - edited or recompressed image that produces visible ELA signal
 - Decide whether the GB 45438 scanner stays as a byte-marker v0 scan or moves to a known implementation.
 - Calibrate or document the ELA threshold with sample images instead of relying only on the current heuristic.
-- Confirm C2PA behavior with a real C2PA image sample, not only absent-manifest behavior.
+- Confirm C2PA behavior with a production C2PA image sample, not only a public test/security sample.
 
 ## Next Recommended Step
 
 Start with backend confidence before expanding product surface:
 
-1. Run the generated sample smoke path in `docs/SAMPLE_VERIFICATION.md`.
-2. Add real sample evidence for EXIF, C2PA, and edited/compressed files.
-3. Re-run backend tests and frontend build.
-4. Commit the v0 sample verification results.
+1. Add real sample evidence for EXIF, production C2PA, and edited/compressed files.
+2. Re-run backend tests and frontend build.
+3. Commit the v0 real-sample verification results.
