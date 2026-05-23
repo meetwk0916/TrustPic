@@ -130,6 +130,33 @@ def test_gb45438_marker_changes_verdict_to_supported_signal() -> None:
     assert payload["signals"]["gb45438"]["details"]["matched_terms"] == ["AI_GENERATED"]
 
 
+def test_gb45438_tc260_xmp_fields_change_verdict_to_supported_signal() -> None:
+    xmp_packet = b"""
+<x:xmpmeta xmlns:x="adobe:ns:meta/">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <rdf:Description xmlns:AIGC="http://www.tc260.org.cn/ns/AIGC/1.0/">
+      <AIGC:Label>AIGC</AIGC:Label>
+      <AIGC:ContentProducer>TrustPic Sample Generator</AIGC:ContentProducer>
+      <AIGC:ProduceID>sample-produce-id</AIGC:ProduceID>
+    </rdf:Description>
+  </rdf:RDF>
+</x:xmpmeta>
+"""
+    response = client.post(
+        "/api/v1/analyze",
+        files={"file": ("gb-xmp.png", _png_bytes() + xmp_packet, "image/png")},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    gb45438 = payload["signals"]["gb45438"]
+    assert payload["verdict"] == "supported_signal_detected"
+    assert gb45438["detected"] is True
+    assert gb45438["details"]["tc260_namespace_detected"] is True
+    assert gb45438["details"]["xmp_fields"]["Label"] == "AIGC"
+    assert gb45438["details"]["xmp_fields"]["ContentProducer"] == "TrustPic Sample Generator"
+
+
 def test_exif_jpeg_reports_metadata_fields() -> None:
     response = client.post(
         "/api/v1/analyze",

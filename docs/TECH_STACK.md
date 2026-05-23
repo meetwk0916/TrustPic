@@ -137,3 +137,8 @@ Frontend:
 - Whether heatmaps should be returned inline as base64 for v0 or exposed as a derived response endpoint.
 - Whether v0 deploy target is local-only, a single VPS, or Cloudflare-fronted public demo.
 
+## Current v0 Detection Notes
+
+- GB 45438 starts as a conservative TC260 AIGC XMP namespace and byte-marker scanner. It checks for the `http://www.tc260.org.cn/ns/AIGC/1.0/` namespace, core TC260-style fields, and basic AIGC/GB marker terms.
+- ELA starts as a heuristic review signal with a documented calibration script. It is not treated as proof of AI generation or tampering.
+- Real sample audits should be run from local directories outside git using `backend/scripts/audit_sample_directory.py`.
