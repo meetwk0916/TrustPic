@@ -17,6 +17,26 @@ Generated samples:
 
 These are smoke samples, not forensic ground truth. A real C2PA sample is still needed before v0 can claim C2PA sample coverage.
 
+## Automated Verification
+
+Run generated samples only:
+
+```bash
+cd backend
+.venv/bin/python scripts/verify_samples.py --output-dir /private/tmp/trustpic-samples
+```
+
+Run generated samples plus a public C2PA sample:
+
+```bash
+cd backend
+.venv/bin/python scripts/verify_samples.py --download-public --output-dir /private/tmp/trustpic-samples
+```
+
+The public C2PA sample currently used is `sample/C.jpg` from `contentauth/c2pa-attacks`.
+That repository describes `sample/C.jpg` as an example image with attached Content Credentials.
+It is a test/security sample with a test certificate, not a real camera-authenticity sample.
+
 ## Backend Smoke
 
 Start the backend:
@@ -44,6 +64,7 @@ Expected smoke outcomes:
 - `plain.png` returns `success` with all signal sections present.
 - `marked-aigc.png` returns `supported_signal_detected` and `signals.gb45438.detected: true`.
 - `edited-compressed.jpg` returns `success` with an ELA heatmap data URL.
+- `c2pa-attacks-C.jpg`, when downloaded, returns `supported_signal_detected`, `signals.c2pa.detected: true`, and `signals.c2pa.details.validation_state: "Valid"`.
 
 ## Web Smoke
 
@@ -67,5 +88,5 @@ Before v0 is complete, add or document real representative samples for:
 
 - camera image with EXIF
 - metadata-stripped image from a common platform flow
-- C2PA image with a readable manifest
+- production C2PA image with a readable manifest from a real tool or device
 - edited/recompressed image with a known edit history
