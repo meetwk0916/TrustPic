@@ -72,7 +72,7 @@ The v0 report should use evidence-first language:
   "limitations": [],
   "recommendation": "Human-readable next step",
   "assets": {
-    "ela_heatmap_url": null
+    "ela_heatmap_data_url": null
   }
 }
 ```
@@ -98,4 +98,3 @@ v0 is done when:
 - Do not present `Pass` as "true image".
 - Do not call model-derived scores "probability" unless calibrated by a labeled evaluation set.
 - Keep the API stable before building Mini Program UI.
-
