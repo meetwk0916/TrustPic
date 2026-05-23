@@ -14,6 +14,7 @@ The current implementation includes:
 - Evidence-first report contract with verdict, summary, signals, limitations, recommendation, and `assets.ela_heatmap_data_url`.
 - React + Vite Web UI for selecting an image, previewing it, showing file metadata, calling the backend, and displaying the report, signal details, and ELA heatmap.
 - Local sample-image generator for repeatable smoke checks.
+- Strict generated/public sample verifier, ELA calibration script, and real-sample directory audit script.
 - CodeGraph index initialized for the project.
 - Git repository initialized and pushed to `origin/main`.
 
@@ -70,13 +71,16 @@ Manual smoke checks also passed:
 - Generated smoke samples are documented in `docs/SAMPLE_VERIFICATION.md`.
 - Generated `plain.png`, `marked-aigc.png`, `camera-exif.jpg`, `metadata-stripped.jpg`, `edited-compressed.jpg`, and `ela-review-compressed.jpg` were uploaded through `scripts/verify_samples.py`; all matched expected outcomes.
 - `scripts/verify_samples.py --download-public` verified public `contentauth/c2pa-attacks` sample `C.jpg` with `c2pa_status: detected` and `c2pa_validation_state: Valid`.
+- `gb45438-xmp.png` verifies TC260 AIGC XMP namespace and field extraction.
+- `scripts/calibrate_ela.py` exports generated-sample ELA metrics to JSON and Markdown.
+- `scripts/audit_sample_directory.py` audits arbitrary user-supplied sample directories into JSON and Markdown summaries.
 
 ## Git And Index
 
 - Remote: `https://github.com/meetwk0916/TrustPic`
 - Branch: `main`
 - Initial commit: `dfb0104 Initial TrustPic v0 prototype`
-- CodeGraph status: up to date, 16 indexed code files, 125 nodes, 203 edges.
+- CodeGraph status: up to date, 18 indexed code files, 155 nodes, 257 edges.
 
 ## Not Blocked By API Quota
 
@@ -100,8 +104,8 @@ Highest-priority gaps:
   - metadata-stripped image from an actual platform flow
   - production C2PA sample from a real tool or device
   - edited or recompressed image with a known real edit history
-- Decide whether the GB 45438 scanner stays as a byte-marker v0 scan or moves to a known implementation.
-- Calibrate or document the ELA threshold with sample images instead of relying only on the current heuristic.
+- Decide whether the upgraded GB 45438 scanner should remain a v0 TC260 XMP/marker scanner or move to a known implementation.
+- Calibrate ELA threshold with real user/production samples instead of generated samples only.
 - Confirm C2PA behavior with a production C2PA image sample, not only a public test/security sample.
 
 ## Next Recommended Step

@@ -37,6 +37,17 @@ EXPECTED_RESULTS = {
         "ela_status": "low_signal",
         "has_ela_heatmap": True,
     },
+    "gb45438-xmp.png": {
+        "status_code": 200,
+        "verdict": "supported_signal_detected",
+        "c2pa_detected": False,
+        "gb45438_detected": True,
+        "gb45438_tc260_namespace_detected": True,
+        "gb45438_label": "AIGC",
+        "exif_detected": False,
+        "ela_status": "low_signal",
+        "has_ela_heatmap": True,
+    },
     "camera-exif.jpg": {
         "status_code": 200,
         "c2pa_detected": False,
@@ -145,6 +156,13 @@ def verify_sample(path: Path) -> dict:
         if isinstance(c2pa.get("details"), dict)
         else None,
         "gb45438_detected": gb45438.get("detected"),
+        "gb45438_tc260_namespace_detected": gb45438.get("details", {}).get("tc260_namespace_detected")
+        if isinstance(gb45438.get("details"), dict)
+        else None,
+        "gb45438_label": gb45438.get("details", {}).get("xmp_fields", {}).get("Label")
+        if isinstance(gb45438.get("details"), dict)
+        and isinstance(gb45438.get("details", {}).get("xmp_fields"), dict)
+        else None,
         "exif_detected": exif.get("detected"),
         "exif_field_count": exif.get("details", {}).get("field_count")
         if isinstance(exif.get("details"), dict)

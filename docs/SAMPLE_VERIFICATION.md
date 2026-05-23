@@ -13,6 +13,7 @@ Generated samples:
 
 - `plain.png`: simple PNG without expected provenance metadata.
 - `marked-aigc.png`: PNG bytes with an appended `AI_GENERATED` marker for the GB 45438/AIGC byte-scan path.
+- `gb45438-xmp.png`: PNG bytes with a TC260 AIGC XMP packet using the `http://www.tc260.org.cn/ns/AIGC/1.0/` namespace.
 - `camera-exif.jpg`: JPEG with generated camera-like EXIF fields.
 - `metadata-stripped.jpg`: same generated scene re-saved without EXIF.
 - `edited-compressed.jpg`: compressed JPEG with local shape edits for ELA smoke review.
@@ -68,6 +69,7 @@ Expected smoke outcomes:
 
 - `plain.png` returns `success` with all signal sections present.
 - `marked-aigc.png` returns `supported_signal_detected` and `signals.gb45438.detected: true`.
+- `gb45438-xmp.png` returns `supported_signal_detected`, `signals.gb45438.details.tc260_namespace_detected: true`, and `signals.gb45438.details.xmp_fields.Label: "AIGC"`.
 - `camera-exif.jpg` returns `success` and `signals.exif.detected: true`.
 - `metadata-stripped.jpg` returns `success` and `signals.exif.detected: false`.
 - `edited-compressed.jpg` returns `success` with an ELA heatmap data URL.

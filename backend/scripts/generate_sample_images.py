@@ -17,6 +17,23 @@ def generate_samples(output_dir: Path) -> list[Path]:
     marked_path.write_bytes(plain_path.read_bytes() + b'\n"AI_GENERATED"\n')
     sample_paths.append(marked_path)
 
+    xmp_packet = b"""
+<x:xmpmeta xmlns:x="adobe:ns:meta/">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <rdf:Description xmlns:AIGC="http://www.tc260.org.cn/ns/AIGC/1.0/">
+      <AIGC:Label>AIGC</AIGC:Label>
+      <AIGC:ContentProducer>TrustPic Sample Generator</AIGC:ContentProducer>
+      <AIGC:ProduceID>trustpic-sample-produce-id</AIGC:ProduceID>
+      <AIGC:ContentPropagator>TrustPic</AIGC:ContentPropagator>
+      <AIGC:PropagateID>trustpic-sample-propagate-id</AIGC:PropagateID>
+    </rdf:Description>
+  </rdf:RDF>
+</x:xmpmeta>
+"""
+    gb_xmp_path = output_dir / "gb45438-xmp.png"
+    gb_xmp_path.write_bytes(plain_path.read_bytes() + xmp_packet)
+    sample_paths.append(gb_xmp_path)
+
     camera_exif = Image.new("RGB", (320, 220), color=(96, 132, 166))
     draw = ImageDraw.Draw(camera_exif)
     draw.rectangle((48, 42, 272, 178), fill=(235, 238, 231))

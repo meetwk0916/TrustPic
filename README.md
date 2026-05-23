@@ -11,6 +11,8 @@ The v0 goal is not to prove whether every image is real or AI-generated. The v0 
 - [technical stack](docs/TECH_STACK.md)
 - [current progress](docs/PROGRESS.md)
 - [sample verification](docs/SAMPLE_VERIFICATION.md)
+- [ELA calibration](docs/ELA_CALIBRATION.md)
+- [real sample intake](docs/REAL_SAMPLE_INTAKE.md)
 
 ## Local Development
 
