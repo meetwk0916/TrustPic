@@ -1,0 +1,95 @@
+from io import BytesIO
+
+from PIL import Image
+
+from scripts.audit_public_dataset import (
+    audit_samples,
+    guess_content_type,
+    iter_local_samples,
+    normalize_hf_value,
+    render_markdown,
+    sample_from_hf_row,
+)
+
+
+def _write_png(path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    image = Image.new("RGB", (32, 32), color=(20, 80, 140))
+    out = BytesIO()
+    image.save(out, format="PNG")
+    path.write_bytes(out.getvalue())
+
+
+def test_iter_local_samples_infers_labels_and_skips_webp_by_default(tmp_path) -> None:
+    _write_png(tmp_path / "real" / "camera.png")
+    _write_png(tmp_path / "fake" / "generated.png")
+    (tmp_path / "fake" / "compressed.webp").write_bytes(b"webp")
+
+    samples = iter_local_samples(tmp_path, max_samples=None, max_per_label=None)
+
+    assert [sample.label for sample in samples] == ["fake", "real"]
+    assert [sample.relative_path for sample in samples] == ["fake/generated.png", "real/camera.png"]
+    assert all(sample.file_name != "compressed.webp" for sample in samples)
+
+
+def test_iter_local_samples_can_cap_per_label(tmp_path) -> None:
+    _write_png(tmp_path / "real" / "one.png")
+    _write_png(tmp_path / "real" / "two.png")
+    _write_png(tmp_path / "fake" / "one.png")
+
+    samples = iter_local_samples(tmp_path, max_samples=None, max_per_label=1)
+
+    assert [sample.relative_path for sample in samples] == ["fake/one.png", "real/one.png"]
+
+
+def test_audit_samples_groups_results_by_label_and_source(tmp_path) -> None:
+    _write_png(tmp_path / "real" / "camera.png")
+    _write_png(tmp_path / "fake" / "generated.png")
+    samples = iter_local_samples(tmp_path, max_samples=None, max_per_label=None)
+
+    payload = audit_samples(samples, dataset=str(tmp_path), mode="local")
+
+    assert payload["total"] == 2
+    assert set(payload["summary"]["by_label"]) == {"fake", "real"}
+    assert payload["summary"]["by_label"]["fake"]["count"] == 1
+    assert payload["summary"]["by_label"]["real"]["count"] == 1
+    assert len(payload["results"]) == 2
+    assert {item["status_code"] for item in payload["results"]} == {200}
+
+
+def test_render_markdown_includes_label_summary(tmp_path) -> None:
+    _write_png(tmp_path / "real" / "camera.png")
+    samples = iter_local_samples(tmp_path, max_samples=None, max_per_label=None)
+    payload = audit_samples(samples, dataset=str(tmp_path), mode="local")
+
+    markdown = render_markdown(payload)
+
+    assert "# TrustPic Public Dataset Audit" in markdown
+    assert "## Label Summary" in markdown
+    assert "`real`" in markdown
+
+
+def test_hf_raw_bytes_sample_infers_content_type_without_extension() -> None:
+    image = Image.new("RGB", (16, 16), color=(200, 40, 40))
+    out = BytesIO()
+    image.save(out, format="PNG")
+
+    sample = sample_from_hf_row(
+        {"bytes": out.getvalue(), "path": None},
+        sample_id="0",
+        label="fake",
+        source="raw-dataset",
+    )
+
+    assert sample.file_name == "hf-0.image"
+    assert sample.content_type == "image/png"
+    assert guess_content_type(sample.file_name, sample.image_bytes) == "image/png"
+
+
+def test_normalize_hf_value_uses_class_label_names() -> None:
+    class FakeClassLabel:
+        def int2str(self, value: int) -> str:
+            return ["real", "fake"][value]
+
+    assert normalize_hf_value({"label": 1}, "label", {"label": FakeClassLabel()}) == "fake"
+    assert normalize_hf_value({"label": "real"}, "label", {}) == "real"

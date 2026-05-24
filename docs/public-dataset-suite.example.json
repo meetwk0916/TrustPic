@@ -1,0 +1,60 @@
+{
+  "suite": "trustpic-public-dataset-v0",
+  "metadata_policy": "prefer raw/original files; avoid WebP-compressed or re-encoded classification mirrors",
+  "defaults": {
+    "max_per_label": 25,
+    "label_from": "parent",
+    "include_webp": false,
+    "allow_missing": false
+  },
+  "gate": {
+    "min_confidence_level": "medium",
+    "min_confidence_score": 0.6,
+    "require_completed_sources": 3,
+    "min_alignment_rate": 0.8
+  },
+  "sources": [
+    {
+      "name": "AIGC-Artifacts-Raw",
+      "mode": "local",
+      "path": "/private/tmp/trustpic-datasets/AIGC-Artifacts-Raw",
+      "metadata_policy": "raw branch only; do not use WebP classification mirror",
+      "expectations": {
+        "real": {
+          "verdict": ["no_supported_signal_found", "review_recommended"]
+        },
+        "fake": {
+          "verdict": ["supported_signal_detected", "review_recommended", "no_supported_signal_found"]
+        }
+      }
+    },
+    {
+      "name": "DND-Dataset",
+      "mode": "local",
+      "path": "/private/tmp/trustpic-datasets/DND-Dataset",
+      "metadata_policy": "metadata-preserving source files only",
+      "expectations": {
+        "nature": {
+          "verdict": ["no_supported_signal_found", "review_recommended"]
+        },
+        "aigc": {
+          "verdict": ["supported_signal_detected", "review_recommended", "no_supported_signal_found"]
+        }
+      }
+    },
+    {
+      "name": "Real-World-AIGC",
+      "mode": "local",
+      "path": "/private/tmp/trustpic-datasets/Real-World-AIGC",
+      "metadata_policy": "metadata-preserving source files only",
+      "expectations": {
+        "real": {
+          "verdict": ["no_supported_signal_found", "review_recommended"]
+        },
+        "ai": {
+          "verdict": ["supported_signal_detected", "review_recommended", "no_supported_signal_found"]
+        }
+      }
+    }
+  ]
+}
