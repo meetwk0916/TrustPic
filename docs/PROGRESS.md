@@ -1,6 +1,6 @@
 # TrustPic Progress
 
-Last aligned: 2026-05-23
+Last aligned: 2026-05-24
 
 ## Current State
 
@@ -14,7 +14,7 @@ The current implementation includes:
 - Evidence-first report contract with verdict, summary, signals, limitations, recommendation, and `assets.ela_heatmap_data_url`.
 - React + Vite Web UI for selecting an image, previewing it, showing file metadata, calling the backend, and displaying the report, signal details, and ELA heatmap.
 - Local sample-image generator for repeatable smoke checks.
-- Strict generated/public sample verifier, ELA calibration script, and real-sample directory audit script.
+- Strict generated/public sample verifier, ELA calibration script, real-sample directory audit script, public dataset audit script, and multi-source dataset suite runner.
 - CodeGraph index initialized for the project.
 - Git repository initialized and pushed to `origin/main`.
 
@@ -74,13 +74,115 @@ Manual smoke checks also passed:
 - `gb45438-xmp.png` verifies TC260 AIGC XMP namespace and field extraction.
 - `scripts/calibrate_ela.py` exports generated-sample ELA metrics to JSON and Markdown.
 - `scripts/audit_sample_directory.py` audits arbitrary user-supplied sample directories into JSON and Markdown summaries.
+- `scripts/audit_public_dataset.py` audits recursive local raw dataset directories and optional Hugging Face dataset splits into grouped JSON and Markdown summaries with audit-confidence metrics.
+- `scripts/audit_dataset_suite.py` runs multiple dataset sources from one JSON config, reports combined confidence and label-expectation alignment, and can fail with a non-zero exit code when confidence/source-count/alignment gates are not met.
+
+Validated on 2026-05-24 after public dataset audit support was added:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `17 passed`.
+
+Validated again after multi-source suite and confidence metrics were added:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `20 passed`.
+
+Validated again after Hugging Face ClassLabel normalization and SOCKS proxy support for optional dataset dependencies were added:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `21 passed`.
+
+Validated again after suite confidence gates were added:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `23 passed`.
+
+Validated again after label-expectation alignment checks were added:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `27 passed`.
+
+```bash
+cd backend
+.venv/bin/python scripts/audit_public_dataset.py local /private/tmp/trustpic-public-audit-smoke --max-samples 3 \
+  --json-output /private/tmp/trustpic-public-audit-smoke.json \
+  --markdown-output /private/tmp/trustpic-public-audit-smoke.md
+```
+
+Result: 3 generated samples audited successfully, with grouped verdict, C2PA, GB 45438, EXIF, and ELA summaries.
+
+```bash
+cd backend
+.venv/bin/python scripts/audit_dataset_suite.py ../docs/public-dataset-suite.example.json \
+  --json-output /private/tmp/trustpic-dataset-suite-smoke.json \
+  --markdown-output /private/tmp/trustpic-dataset-suite-smoke.md
+```
+
+Result: 3 local dataset sources completed successfully in smoke mode, with 6 generated samples, 0 skipped sources, 0 failed sources, and combined confidence `medium` (`0.73`). The low sample count warning is expected for smoke data.
+
+Gated suite pass:
+
+```bash
+cd backend
+.venv/bin/python scripts/audit_dataset_suite.py ../docs/public-dataset-suite.example.json \
+  --min-confidence-level medium \
+  --min-confidence-score 0.6 \
+  --require-completed-sources 3 \
+  --json-output /private/tmp/trustpic-dataset-suite-gated.json \
+  --markdown-output /private/tmp/trustpic-dataset-suite-gated.md
+```
+
+Result: exit code `0`, gate status `passed`, expectation alignment `1.0`.
+
+Gated suite failure check:
+
+```bash
+cd backend
+.venv/bin/python scripts/audit_dataset_suite.py ../docs/public-dataset-suite.example.json \
+  --min-confidence-level high \
+  --min-confidence-score 0.9 \
+  --require-completed-sources 3 \
+  --json-output /private/tmp/trustpic-dataset-suite-gate-fail.json \
+  --markdown-output /private/tmp/trustpic-dataset-suite-gate-fail.md
+```
+
+Result: exit code `1`, gate status `failed`, with failures for confidence level and score.
+
+Optional Hugging Face dependencies were installed with:
+
+```bash
+cd backend
+.venv/bin/python -m pip install -e '.[dev,datasets]'
+```
+
+Result: `datasets`, `huggingface-hub`, `pyarrow`, and `socksio` installed successfully in the backend venv.
 
 ## Git And Index
 
 - Remote: `https://github.com/meetwk0916/TrustPic`
 - Branch: `main`
 - Initial commit: `dfb0104 Initial TrustPic v0 prototype`
-- CodeGraph status: up to date, 18 indexed code files, 155 nodes, 257 edges.
+- CodeGraph status: up to date after dataset audit additions.
 
 ## Not Blocked By API Quota
 
@@ -99,6 +201,7 @@ The v0 goal is not complete until the success criteria in `docs/V0_GOALS.md` are
 
 Highest-priority gaps:
 
+- Replace smoke data with real metadata-preserving public dataset subsets, such as raw AIGC artifact files, DND-Dataset, or Real-World-AIGC variants that keep original source files.
 - Add real user-supplied or production-source sample records for:
   - camera image with EXIF, beyond generated EXIF
   - metadata-stripped image from an actual platform flow
@@ -112,6 +215,6 @@ Highest-priority gaps:
 
 Start with backend confidence before expanding product surface:
 
-1. Add real user-supplied sample evidence for EXIF, platform-stripped metadata, production C2PA, and known edit-history files.
+1. Download or mount the real raw datasets under `/private/tmp/trustpic-datasets/` and run `scripts/audit_dataset_suite.py` with `docs/public-dataset-suite.example.json`.
 2. Re-run backend tests and frontend build.
 3. Commit the v0 real-sample verification results.

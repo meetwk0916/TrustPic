@@ -13,6 +13,7 @@ The v0 goal is not to prove whether every image is real or AI-generated. The v0 
 - [sample verification](docs/SAMPLE_VERIFICATION.md)
 - [ELA calibration](docs/ELA_CALIBRATION.md)
 - [real sample intake](docs/REAL_SAMPLE_INTAKE.md)
+- [public dataset suite example](docs/public-dataset-suite.example.json)
 
 ## Local Development
 
