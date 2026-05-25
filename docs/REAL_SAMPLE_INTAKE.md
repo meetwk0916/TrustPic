@@ -138,6 +138,36 @@ Expectation alignment is a dataset-audit consistency check, not proof that Trust
 
 If Hugging Face network access is unstable, download or mount the raw dataset files locally and use `mode: "local"` in the suite config. Local mode is the preferred path for large datasets and for preserving file-level provenance evidence.
 
+## Auto Validation Window
+
+Use the validation window when you want TrustPic to scan available sources and run the suite automatically.
+
+Local discovery:
+
+```bash
+cd backend
+.venv/bin/python scripts/audit_dataset_window.py \
+  --root /private/tmp/trustpic-datasets \
+  --config-output /private/tmp/trustpic-auto-window-config.json \
+  --json-output /private/tmp/trustpic-auto-window.json \
+  --markdown-output /private/tmp/trustpic-auto-window.md
+```
+
+Remote extraction from Hugging Face-style datasets, after enabling at least one source in the catalog and replacing placeholder dataset IDs:
+
+```bash
+cd backend
+.venv/bin/python scripts/audit_dataset_window.py \
+  --remote-only \
+  --remote-catalog ../docs/public-dataset-remote-catalog.example.json \
+  --require-completed-sources 1 \
+  --config-output /private/tmp/trustpic-remote-window-config.json \
+  --json-output /private/tmp/trustpic-remote-window.json \
+  --markdown-output /private/tmp/trustpic-remote-window.md
+```
+
+For remote extraction, edit `docs/public-dataset-remote-catalog.example.json` with the exact dataset IDs, image column, label column, and split, then set those entries to `"enabled": true`. The checked-in example keeps placeholder sources disabled so it cannot accidentally audit the wrong dataset. The window passes enabled sources into the same suite runner, which uses Hugging Face `decode=False` to read raw bytes or cached raw file paths. Keep `streaming: true` for first-pass validation to avoid downloading an entire dataset before sampling.
+
 ## Acceptance Notes
 
 After auditing a real sample set, record only non-sensitive findings in project docs:

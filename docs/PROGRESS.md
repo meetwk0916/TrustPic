@@ -1,6 +1,6 @@
 # TrustPic Progress
 
-Last aligned: 2026-05-24
+Last aligned: 2026-05-25
 
 ## Current State
 
@@ -14,7 +14,7 @@ The current implementation includes:
 - Evidence-first report contract with verdict, summary, signals, limitations, recommendation, and `assets.ela_heatmap_data_url`.
 - React + Vite Web UI for selecting an image, previewing it, showing file metadata, calling the backend, and displaying the report, signal details, and ELA heatmap.
 - Local sample-image generator for repeatable smoke checks.
-- Strict generated/public sample verifier, ELA calibration script, real-sample directory audit script, public dataset audit script, and multi-source dataset suite runner.
+- Strict generated/public sample verifier, ELA calibration script, real-sample directory audit script, public dataset audit script, multi-source dataset suite runner, and auto validation window.
 - CodeGraph index initialized for the project.
 - Git repository initialized and pushed to `origin/main`.
 
@@ -177,6 +177,39 @@ cd backend
 
 Result: `datasets`, `huggingface-hub`, `pyarrow`, and `socksio` installed successfully in the backend venv.
 
+Validated on 2026-05-25 after the auto validation window was added:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `32 passed`.
+
+```bash
+cd backend
+.venv/bin/python scripts/audit_dataset_window.py \
+  --root /private/tmp/trustpic-datasets \
+  --config-output /private/tmp/trustpic-auto-window-config.json \
+  --json-output /private/tmp/trustpic-auto-window.json \
+  --markdown-output /private/tmp/trustpic-auto-window.md
+```
+
+Result: local discovery found 3 known sources (`AIGC-Artifacts-Raw`, `DND-Dataset`, and `Real-World-AIGC`), completed 6 generated smoke samples, produced combined confidence `medium` (`0.73`), expectation alignment `1.0`, and gate status `passed`.
+
+```bash
+cd web
+npm run build
+```
+
+Result: TypeScript build and Vite production build passed.
+
+```bash
+git diff --check
+```
+
+Result: no whitespace errors.
+
 ## Git And Index
 
 - Remote: `https://github.com/meetwk0916/TrustPic`
@@ -202,6 +235,7 @@ The v0 goal is not complete until the success criteria in `docs/V0_GOALS.md` are
 Highest-priority gaps:
 
 - Replace smoke data with real metadata-preserving public dataset subsets, such as raw AIGC artifact files, DND-Dataset, or Real-World-AIGC variants that keep original source files.
+- Enable `docs/public-dataset-remote-catalog.example.json` entries only after replacing placeholder Hugging Face IDs with verified raw/original dataset IDs and column names.
 - Add real user-supplied or production-source sample records for:
   - camera image with EXIF, beyond generated EXIF
   - metadata-stripped image from an actual platform flow
@@ -215,6 +249,7 @@ Highest-priority gaps:
 
 Start with backend confidence before expanding product surface:
 
-1. Download or mount the real raw datasets under `/private/tmp/trustpic-datasets/` and run `scripts/audit_dataset_suite.py` with `docs/public-dataset-suite.example.json`.
-2. Re-run backend tests and frontend build.
-3. Commit the v0 real-sample verification results.
+1. Download or mount the real raw datasets under `/private/tmp/trustpic-datasets/`, or enable verified Hugging Face raw dataset entries in `docs/public-dataset-remote-catalog.example.json`.
+2. Run `scripts/audit_dataset_window.py` to auto-discover available local or remote sources and generate the gated validation report.
+3. Re-run backend tests and frontend build.
+4. Commit the v0 real-sample verification results.
