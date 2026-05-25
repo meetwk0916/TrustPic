@@ -7,6 +7,7 @@ try:
     from audit_public_dataset import (
         audit_samples,
         compute_confidence,
+        iter_huggingface_rows_samples,
         iter_huggingface_samples,
         iter_local_samples,
         summarize_results,
@@ -15,6 +16,7 @@ except ImportError:
     from scripts.audit_public_dataset import (
         audit_samples,
         compute_confidence,
+        iter_huggingface_rows_samples,
         iter_huggingface_samples,
         iter_local_samples,
         summarize_results,
@@ -213,6 +215,8 @@ def run_source(source: dict, *, defaults: dict) -> dict:
             return run_local_source(source, defaults=defaults)
         if mode == "hf":
             return run_huggingface_source(source, defaults=defaults)
+        if mode == "hf_rows":
+            return run_huggingface_rows_source(source, defaults=defaults)
     except SystemExit as exc:
         if source.get("allow_missing", defaults.get("allow_missing", False)):
             return skipped_source(source, str(exc))
@@ -247,6 +251,22 @@ def run_huggingface_source(source: dict, *, defaults: dict) -> dict:
         max_per_label=int_or_none(source.get("max_per_label", defaults.get("max_per_label"))),
     )
     payload = audit_samples(samples, dataset=source["dataset"], mode="huggingface")
+    return with_source_metadata(payload, source)
+
+
+def run_huggingface_rows_source(source: dict, *, defaults: dict) -> dict:
+    samples = iter_huggingface_rows_samples(
+        dataset_name=required_value(source, "dataset"),
+        config=source.get("config", defaults.get("config", "default")),
+        split=source.get("split", defaults.get("split", "train")),
+        image_column=source.get("image_column", defaults.get("image_column", "image")),
+        label_column=source.get("label_column", defaults.get("label_column", "label")),
+        source_column=source.get("source_column", defaults.get("source_column")),
+        offset=int(source.get("offset", defaults.get("offset", 0))),
+        max_samples=int_or_none(source.get("max_samples", defaults.get("max_samples"))),
+        max_per_label=int_or_none(source.get("max_per_label", defaults.get("max_per_label"))),
+    )
+    payload = audit_samples(samples, dataset=source["dataset"], mode="huggingface_rows")
     return with_source_metadata(payload, source)
 
 

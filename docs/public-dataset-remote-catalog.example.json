@@ -1,6 +1,28 @@
 {
   "sources": [
     {
+      "name": "AIGC-Detection-Benchmark",
+      "mode": "hf_rows",
+      "enabled": false,
+      "dataset": "TheKernel01/AIGC-Detection-Benchmark",
+      "config": "default",
+      "split": "test",
+      "image_column": "image",
+      "label_column": "label",
+      "source_column": "generator",
+      "offset": 0,
+      "max_samples": 6,
+      "metadata_policy": "remote Hugging Face benchmark smoke source; use for remote extraction and label coverage, not metadata-preserving calibration",
+      "expectations": {
+        "real": {
+          "verdict": ["no_supported_signal_found", "review_recommended", "supported_signal_detected"]
+        },
+        "fake": {
+          "verdict": ["no_supported_signal_found", "review_recommended", "supported_signal_detected"]
+        }
+      }
+    },
+    {
       "name": "AIGC-Artifacts-Raw",
       "mode": "hf",
       "enabled": false,

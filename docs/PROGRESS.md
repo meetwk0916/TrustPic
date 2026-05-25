@@ -186,6 +186,15 @@ cd backend
 
 Result: `32 passed`.
 
+Validated again after Hugging Face datasets-server row extraction was added:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `35 passed`.
+
 ```bash
 cd backend
 .venv/bin/python scripts/audit_dataset_window.py \
@@ -196,6 +205,22 @@ cd backend
 ```
 
 Result: local discovery found 3 known sources (`AIGC-Artifacts-Raw`, `DND-Dataset`, and `Real-World-AIGC`), completed 6 generated smoke samples, produced combined confidence `medium` (`0.73`), expectation alignment `1.0`, and gate status `passed`.
+
+Validated remote Hugging Face row extraction with `TheKernel01/AIGC-Detection-Benchmark`:
+
+```bash
+cd backend
+.venv/bin/python scripts/audit_dataset_window.py \
+  --remote-only \
+  --remote-catalog /private/tmp/trustpic-aigc-detection-benchmark-catalog.json \
+  --require-completed-sources 1 \
+  --min-confidence-level low \
+  --min-confidence-score 0.3 \
+  --json-output /private/tmp/trustpic-aigc-detection-benchmark-window.json \
+  --markdown-output /private/tmp/trustpic-aigc-detection-benchmark-window.md
+```
+
+Result: datasets-server row extraction completed 6 remote samples, labels normalized to `real` and `fake`, generator/source values included `Real`, `ADM`, `BigGAN`, and `CycleGAN`, analyzer success rate `1.0`, combined confidence `medium` (`0.755`), expectation alignment `1.0`, and gate status `passed`. This source is suitable for remote extraction smoke checks, but the first sample set had no C2PA, GB 45438, or EXIF signals, so it is not enough for metadata calibration.
 
 ```bash
 cd web
@@ -235,7 +260,8 @@ The v0 goal is not complete until the success criteria in `docs/V0_GOALS.md` are
 Highest-priority gaps:
 
 - Replace smoke data with real metadata-preserving public dataset subsets, such as raw AIGC artifact files, DND-Dataset, or Real-World-AIGC variants that keep original source files.
-- Enable `docs/public-dataset-remote-catalog.example.json` entries only after replacing placeholder Hugging Face IDs with verified raw/original dataset IDs and column names.
+- Use the verified `AIGC-Detection-Benchmark` `hf_rows` entry for remote extraction smoke only; continue looking for raw/original dataset IDs for metadata calibration.
+- Enable remaining placeholder `docs/public-dataset-remote-catalog.example.json` entries only after replacing Hugging Face IDs with verified raw/original dataset IDs and column names.
 - Add real user-supplied or production-source sample records for:
   - camera image with EXIF, beyond generated EXIF
   - metadata-stripped image from an actual platform flow
