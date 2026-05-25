@@ -10,6 +10,7 @@ try:
         iter_huggingface_rows_samples,
         iter_huggingface_samples,
         iter_local_samples,
+        iter_url_samples,
         summarize_results,
     )
 except ImportError:
@@ -19,6 +20,7 @@ except ImportError:
         iter_huggingface_rows_samples,
         iter_huggingface_samples,
         iter_local_samples,
+        iter_url_samples,
         summarize_results,
     )
 
@@ -217,6 +219,8 @@ def run_source(source: dict, *, defaults: dict) -> dict:
             return run_huggingface_source(source, defaults=defaults)
         if mode == "hf_rows":
             return run_huggingface_rows_source(source, defaults=defaults)
+        if mode == "url":
+            return run_url_source(source, defaults=defaults)
     except SystemExit as exc:
         if source.get("allow_missing", defaults.get("allow_missing", False)):
             return skipped_source(source, str(exc))
@@ -255,18 +259,38 @@ def run_huggingface_source(source: dict, *, defaults: dict) -> dict:
 
 
 def run_huggingface_rows_source(source: dict, *, defaults: dict) -> dict:
+    label_column = source.get("label_column", defaults.get("label_column", "label"))
+    source_column = source.get("source_column", defaults.get("source_column"))
+    if source.get("default_label") is not None and "label_column" not in source:
+        label_column = None
+    if source.get("default_source") is not None and "source_column" not in source:
+        source_column = None
     samples = iter_huggingface_rows_samples(
         dataset_name=required_value(source, "dataset"),
         config=source.get("config", defaults.get("config", "default")),
         split=source.get("split", defaults.get("split", "train")),
         image_column=source.get("image_column", defaults.get("image_column", "image")),
-        label_column=source.get("label_column", defaults.get("label_column", "label")),
-        source_column=source.get("source_column", defaults.get("source_column")),
+        label_column=label_column,
+        source_column=source_column,
         offset=int(source.get("offset", defaults.get("offset", 0))),
+        default_label=source.get("default_label", defaults.get("default_label")),
+        default_source=source.get("default_source", defaults.get("default_source")),
         max_samples=int_or_none(source.get("max_samples", defaults.get("max_samples"))),
         max_per_label=int_or_none(source.get("max_per_label", defaults.get("max_per_label"))),
     )
     payload = audit_samples(samples, dataset=source["dataset"], mode="huggingface_rows")
+    return with_source_metadata(payload, source)
+
+
+def run_url_source(source: dict, *, defaults: dict) -> dict:
+    urls = source.get("urls")
+    if not isinstance(urls, list) or not urls:
+        raise SystemExit(f"Source '{source.get('name', 'unnamed-source')}' must include a non-empty urls list.")
+    samples = iter_url_samples(
+        urls,
+        max_samples=int_or_none(source.get("max_samples", defaults.get("max_samples"))),
+    )
+    payload = audit_samples(samples, dataset=source.get("dataset") or source.get("name", "url-source"), mode="url")
     return with_source_metadata(payload, source)
 
 

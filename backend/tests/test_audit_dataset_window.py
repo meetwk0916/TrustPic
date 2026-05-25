@@ -96,6 +96,63 @@ def test_load_remote_catalog_skips_disabled_sources(tmp_path) -> None:
     assert [source["name"] for source in load_remote_catalog_sources(catalog)] == ["enabled"]
 
 
+def test_remote_catalog_can_use_url_sources(tmp_path) -> None:
+    catalog = tmp_path / "remote-catalog.json"
+    catalog.write_text(
+        json.dumps(
+            {
+                "sources": [
+                    {
+                        "name": "contentauth-c2pa-attacks",
+                        "mode": "url",
+                        "urls": [
+                            {
+                                "url": "https://example.test/C.jpg",
+                                "file_name": "C.jpg",
+                                "label": "c2pa_positive",
+                                "source": "contentauth/c2pa-attacks",
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    source = load_remote_catalog_sources(catalog)[0]
+
+    assert source["mode"] == "url"
+    assert source["urls"][0]["label"] == "c2pa_positive"
+
+
+def test_remote_catalog_can_use_hf_rows_default_label(tmp_path) -> None:
+    catalog = tmp_path / "remote-catalog.json"
+    catalog.write_text(
+        json.dumps(
+            {
+                "sources": [
+                    {
+                        "name": "DataSeeds DSD",
+                        "mode": "hf_rows",
+                        "dataset": "Dataseeds/DataSeeds.AI-Sample-Dataset-DSD",
+                        "label_column": None,
+                        "default_label": "exif_photo",
+                        "default_source": "DataSeeds DSD",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    source = load_remote_catalog_sources(catalog)[0]
+
+    assert source["mode"] == "hf_rows"
+    assert source["default_label"] == "exif_photo"
+    assert source["default_source"] == "DataSeeds DSD"
+
+
 def test_remote_catalog_rejects_non_hf_sources(tmp_path) -> None:
     catalog = tmp_path / "remote-catalog.json"
     catalog.write_text(json.dumps({"sources": [{"name": "bad", "mode": "local", "path": "/tmp/data"}]}), encoding="utf-8")

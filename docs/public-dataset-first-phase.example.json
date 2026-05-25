@@ -1,0 +1,157 @@
+{
+  "suite": "trustpic-first-phase-minimum-coverage",
+  "metadata_policy": "minimum coverage set for TrustPic v0 evidence validation",
+  "defaults": {
+    "label_from": "parent",
+    "include_webp": false,
+    "allow_missing": false
+  },
+  "gate": {
+    "min_confidence_level": "medium",
+    "min_confidence_score": 0.55,
+    "require_completed_sources": 5,
+    "min_alignment_rate": 0.8
+  },
+  "sources": [
+    {
+      "name": "AIGC-Detection-Benchmark",
+      "mode": "hf_rows",
+      "dataset": "TheKernel01/AIGC-Detection-Benchmark",
+      "config": "default",
+      "split": "test",
+      "image_column": "image",
+      "label_column": "label",
+      "source_column": "generator",
+      "offset": 0,
+      "max_samples": 6,
+      "metadata_policy": "remote extraction smoke source for real/fake label and generator coverage",
+      "expectations": {
+        "real": {
+          "verdict": ["no_supported_signal_found", "review_recommended", "supported_signal_detected"]
+        },
+        "fake": {
+          "verdict": ["no_supported_signal_found", "review_recommended", "supported_signal_detected"]
+        }
+      }
+    },
+    {
+      "name": "OpenFake",
+      "mode": "hf_rows",
+      "dataset": "ComplexDataLab/OpenFake",
+      "config": "core",
+      "split": "test",
+      "image_column": "image",
+      "label_column": "label",
+      "source_column": "model",
+      "offset": 0,
+      "max_samples": 6,
+      "metadata_policy": "remote generator benchmark source; use for label/source coverage, not metadata calibration",
+      "expectations": {
+        "real": {
+          "verdict": ["no_supported_signal_found", "review_recommended", "supported_signal_detected"]
+        },
+        "fake": {
+          "verdict": ["no_supported_signal_found", "review_recommended", "supported_signal_detected"]
+        }
+      }
+    },
+    {
+      "name": "DataSeeds-DSD",
+      "mode": "hf_rows",
+      "enabled": false,
+      "dataset": "Dataseeds/DataSeeds.AI-Sample-Dataset-DSD",
+      "config": "default",
+      "split": "validation",
+      "image_column": "image",
+      "default_label": "exif_photo",
+      "default_source": "DataSeeds DSD",
+      "offset": 0,
+      "max_samples": 3,
+      "metadata_policy": "candidate photography metadata source; rows API exposes EXIF fields, but first smoke showed downloaded image bytes did not retain EXIF"
+    },
+    {
+      "name": "public-exif-samples",
+      "mode": "url",
+      "dataset": "ianare/exif-samples",
+      "metadata_policy": "required EXIF source using public raw JPEG samples with preserved camera EXIF",
+      "urls": [
+        {
+          "url": "https://raw.githubusercontent.com/ianare/exif-samples/master/jpg/Canon_40D.jpg",
+          "file_name": "Canon_40D.jpg",
+          "label": "exif_photo",
+          "source": "ianare/exif-samples"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/ianare/exif-samples/master/jpg/Nikon_D70.jpg",
+          "file_name": "Nikon_D70.jpg",
+          "label": "exif_photo",
+          "source": "ianare/exif-samples"
+        }
+      ],
+      "expectations": {
+        "exif_photo": {
+          "verdict": ["no_supported_signal_found", "review_recommended"],
+          "c2pa_status": "absent",
+          "gb45438_status": "absent",
+          "exif_detected": true
+        }
+      }
+    },
+    {
+      "name": "contentauth-c2pa-attacks",
+      "mode": "url",
+      "dataset": "contentauth/c2pa-attacks",
+      "metadata_policy": "required C2PA source from public Content Credentials toolchain sample",
+      "urls": [
+        {
+          "url": "https://raw.githubusercontent.com/contentauth/c2pa-attacks/main/sample/C.jpg",
+          "file_name": "c2pa-attacks-C.jpg",
+          "label": "c2pa_positive",
+          "source": "contentauth/c2pa-attacks sample/C.jpg"
+        }
+      ],
+      "expectations": {
+        "c2pa_positive": {
+          "verdict": "supported_signal_detected",
+          "c2pa_status": "detected"
+        }
+      }
+    },
+    {
+      "name": "TrustPic-V0-Fixtures",
+      "mode": "local",
+      "path": "/private/tmp/trustpic-first-phase-fixtures/TrustPic-V0-Fixtures",
+      "metadata_policy": "local generated fixtures for GB 45438/TC260, metadata-stripped, and ELA review smoke coverage",
+      "expectations": {
+        "gb45438": {
+          "verdict": "supported_signal_detected",
+          "gb45438_status": "detected"
+        },
+        "metadata_stripped": {
+          "verdict": ["no_supported_signal_found", "review_recommended"],
+          "c2pa_status": "absent",
+          "gb45438_status": "absent",
+          "exif_detected": false
+        },
+        "ela_review": {
+          "verdict": "review_recommended",
+          "ela_status": "review"
+        }
+      }
+    },
+    {
+      "name": "TrustMyContent-C2PA-Candidate",
+      "mode": "hf_rows",
+      "enabled": false,
+      "dataset": "TrustMyContent/C2PA_Certified_Image_Authenticity",
+      "config": "default",
+      "split": "train",
+      "image_column": "image",
+      "default_label": "c2pa_candidate",
+      "default_source": "TrustMyContent C2PA",
+      "offset": 0,
+      "max_samples": 3,
+      "metadata_policy": "candidate C2PA batch source; enable only after confirming metadata survives rows API download"
+    }
+  ]
+}
