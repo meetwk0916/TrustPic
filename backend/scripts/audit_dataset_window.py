@@ -158,8 +158,10 @@ def normalize_remote_source(source: dict) -> dict | None:
     if source.get("enabled", True) is False:
         return None
     mode = source.get("mode", "hf")
-    if mode != "hf":
-        raise SystemExit(f"Remote catalog source '{source.get('name', 'unnamed-source')}' must use mode 'hf'.")
+    if mode not in {"hf", "hf_rows"}:
+        raise SystemExit(
+            f"Remote catalog source '{source.get('name', 'unnamed-source')}' must use mode 'hf' or 'hf_rows'."
+        )
     if not source.get("dataset"):
         raise SystemExit(f"Remote catalog source '{source.get('name', 'unnamed-source')}' is missing dataset.")
 
@@ -167,20 +169,20 @@ def normalize_remote_source(source: dict) -> dict | None:
     preset = KNOWN_DATASETS.get(name, {})
     normalized = {
         "name": name,
-        "mode": "hf",
+        "mode": mode,
         "dataset": source["dataset"],
         "metadata_policy": source.get("metadata_policy", preset.get("metadata_policy", "remote raw bytes via HF dataset")),
+        "config": source.get("config"),
         "split": source.get("split", "train"),
         "image_column": source.get("image_column", "image"),
         "label_column": source.get("label_column", "label"),
         "source_column": source.get("source_column"),
         "streaming": bool(source.get("streaming", True)),
+        "offset": source.get("offset"),
         "max_per_label": source.get("max_per_label"),
         "max_samples": source.get("max_samples"),
         "expectations": source.get("expectations", preset.get("expectations", {})),
     }
-    if source.get("config"):
-        normalized["config"] = source["config"]
     return {key: value for key, value in normalized.items() if value is not None}
 
 

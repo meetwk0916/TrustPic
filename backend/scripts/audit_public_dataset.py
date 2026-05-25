@@ -62,6 +62,19 @@ def main() -> None:
         help="Stream the dataset instead of downloading the full split first.",
     )
 
+    hf_rows_parser = subparsers.add_parser(
+        "hf-rows",
+        help="Audit a Hugging Face dataset through the lightweight datasets-server rows API.",
+    )
+    add_common_args(hf_rows_parser)
+    hf_rows_parser.add_argument("dataset", help="Hugging Face dataset name, for example org/name.")
+    hf_rows_parser.add_argument("--config", default="default", help="Hugging Face dataset config name.")
+    hf_rows_parser.add_argument("--split", default="train", help="Dataset split to audit.")
+    hf_rows_parser.add_argument("--image-column", default="image", help="Column containing image files.")
+    hf_rows_parser.add_argument("--label-column", default="label", help="Optional label column.")
+    hf_rows_parser.add_argument("--source-column", help="Optional source/generator column.")
+    hf_rows_parser.add_argument("--offset", type=int, default=0, help="Starting row offset for the rows API.")
+
     args = parser.parse_args()
 
     if args.mode == "local":
@@ -73,7 +86,7 @@ def main() -> None:
             max_per_label=args.max_per_label,
         )
         payload = audit_samples(samples, dataset=args.sample_root, mode="local")
-    else:
+    elif args.mode == "hf":
         samples = iter_huggingface_samples(
             dataset_name=args.dataset,
             config=args.config,
@@ -86,6 +99,19 @@ def main() -> None:
             max_per_label=args.max_per_label,
         )
         payload = audit_samples(samples, dataset=args.dataset, mode="huggingface")
+    else:
+        samples = iter_huggingface_rows_samples(
+            dataset_name=args.dataset,
+            config=args.config,
+            split=args.split,
+            image_column=args.image_column,
+            label_column=args.label_column,
+            source_column=args.source_column,
+            offset=args.offset,
+            max_samples=args.max_samples,
+            max_per_label=args.max_per_label,
+        )
+        payload = audit_samples(samples, dataset=args.dataset, mode="huggingface_rows")
 
     if args.json_output:
         Path(args.json_output).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
@@ -221,6 +247,168 @@ def iter_huggingface_samples(
         if max_samples is not None and len(samples) >= max_samples:
             break
     return samples
+
+
+def iter_huggingface_rows_samples(
+    *,
+    dataset_name: str,
+    config: str,
+    split: str,
+    image_column: str,
+    label_column: str | None,
+    source_column: str | None,
+    offset: int = 0,
+    max_samples: int | None,
+    max_per_label: int | None,
+) -> list[DatasetSample]:
+    try:
+        import httpx
+    except ImportError as exc:
+        raise SystemExit(
+            "Hugging Face rows audit requires httpx. "
+            "Install dev dependencies with: cd backend && .venv/bin/python -m pip install -e '.[dev,datasets]'"
+        ) from exc
+
+    if max_samples is None and max_per_label is None:
+        raise SystemExit("Hugging Face rows audit requires --max-samples or --max-per-label.")
+
+    samples: list[DatasetSample] = []
+    counters: dict[str, int] = defaultdict(int)
+    current_offset = offset
+    rows_seen = 0
+    page_size = min(max(max_samples or (max_per_label or 1) * 10, 10), 100)
+    row_scan_limit = max(max_samples or 0, (max_per_label or 0) * 20, page_size)
+
+    with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+        while rows_seen < row_scan_limit:
+            payload = fetch_hf_rows_page(
+                client,
+                dataset_name=dataset_name,
+                config=config,
+                split=split,
+                offset=current_offset,
+                length=min(page_size, row_scan_limit - rows_seen),
+            )
+            rows = payload.get("rows", [])
+            if not rows:
+                break
+            page_samples = samples_from_hf_rows_payload(
+                payload,
+                client=client,
+                image_column=image_column,
+                label_column=label_column,
+                source_column=source_column,
+                counters=counters,
+                max_per_label=max_per_label,
+            )
+            samples.extend(page_samples)
+            rows_seen += len(rows)
+            current_offset += len(rows)
+            if max_samples is not None and len(samples) >= max_samples:
+                return samples[:max_samples]
+    return samples
+
+
+def fetch_hf_rows_page(
+    client,
+    *,
+    dataset_name: str,
+    config: str,
+    split: str,
+    offset: int,
+    length: int,
+) -> dict:
+    response = client.get(
+        "https://datasets-server.huggingface.co/rows",
+        params={
+            "dataset": dataset_name,
+            "config": config,
+            "split": split,
+            "offset": offset,
+            "length": length,
+        },
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def samples_from_hf_rows_payload(
+    payload: dict,
+    *,
+    client,
+    image_column: str,
+    label_column: str | None,
+    source_column: str | None,
+    counters: dict[str, int],
+    max_per_label: int | None,
+) -> list[DatasetSample]:
+    features = {feature.get("name"): feature.get("type", {}) for feature in payload.get("features", [])}
+    samples: list[DatasetSample] = []
+    for item in payload.get("rows", []):
+        row = item.get("row", {})
+        label = normalize_hf_rows_value(row, label_column, features) if label_column else None
+        counter_key = label or "unlabeled"
+        if max_per_label is not None and counters.get(counter_key, 0) >= max_per_label:
+            continue
+
+        image_value = row.get(image_column)
+        sample = sample_from_hf_rows_image(
+            image_value,
+            client=client,
+            sample_id=str(item.get("row_idx")),
+            label=label,
+            source=normalize_hf_rows_value(row, source_column, features) if source_column else None,
+        )
+        samples.append(sample)
+        counters[counter_key] = counters.get(counter_key, 0) + 1
+    return samples
+
+
+def sample_from_hf_rows_image(
+    image_value: object,
+    *,
+    client,
+    sample_id: str,
+    label: str | None,
+    source: str | None,
+) -> DatasetSample:
+    if not isinstance(image_value, dict) or not image_value.get("src"):
+        raise SystemExit(f"Sample {sample_id} has no Hugging Face rows image src.")
+
+    image_url = str(image_value["src"])
+    response = client.get(image_url)
+    response.raise_for_status()
+    content_type = response.headers.get("content-type")
+    file_name = image_url.split("?", 1)[0].rstrip("/").rsplit("/", 1)[-1] or f"hf-row-{sample_id}.image"
+    return DatasetSample(
+        sample_id=sample_id,
+        file_name=file_name,
+        label=label,
+        source=source,
+        image_bytes=response.content,
+        content_type=normalize_image_content_type(content_type, file_name, response.content),
+    )
+
+
+def normalize_image_content_type(content_type: str | None, file_name: str, image_bytes: bytes) -> str:
+    if content_type:
+        normalized = content_type.split(";", 1)[0].strip().lower()
+        if normalized in {"image/jpeg", "image/png", "image/webp"}:
+            return normalized
+    return guess_content_type(file_name, image_bytes)
+
+
+def normalize_hf_rows_value(row: dict, column: str | None, features: dict) -> str | None:
+    if not column:
+        return None
+    value = row.get(column)
+    feature = features.get(column) if isinstance(features, dict) else None
+    if value is None:
+        return None
+    names = feature.get("names") if isinstance(feature, dict) else None
+    if isinstance(names, list) and isinstance(value, int) and 0 <= value < len(names):
+        return str(names[value])
+    return normalize_value(value)
 
 
 def sample_from_hf_row(

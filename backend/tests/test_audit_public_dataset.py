@@ -7,7 +7,10 @@ from scripts.audit_public_dataset import (
     guess_content_type,
     iter_local_samples,
     normalize_hf_value,
+    normalize_hf_rows_value,
+    normalize_image_content_type,
     render_markdown,
+    samples_from_hf_rows_payload,
     sample_from_hf_row,
 )
 
@@ -93,3 +96,67 @@ def test_normalize_hf_value_uses_class_label_names() -> None:
 
     assert normalize_hf_value({"label": 1}, "label", {"label": FakeClassLabel()}) == "fake"
     assert normalize_hf_value({"label": "real"}, "label", {}) == "real"
+
+
+def test_hf_rows_payload_downloads_image_and_uses_class_label_names() -> None:
+    image = Image.new("RGB", (16, 16), color=(30, 90, 150))
+    out = BytesIO()
+    image.save(out, format="JPEG")
+
+    class FakeResponse:
+        headers = {"content-type": "image/jpeg"}
+        content = out.getvalue()
+
+        def raise_for_status(self) -> None:
+            pass
+
+    class FakeClient:
+        def get(self, url):
+            assert url == "https://example.test/image.jpg"
+            return FakeResponse()
+
+    payload = {
+        "features": [
+            {"name": "label", "type": {"names": ["real", "fake"], "_type": "ClassLabel"}},
+            {"name": "generator", "type": {"names": ["Real", "ADM"], "_type": "ClassLabel"}},
+        ],
+        "rows": [
+            {
+                "row_idx": 7,
+                "row": {
+                    "image": {"src": "https://example.test/image.jpg"},
+                    "label": 1,
+                    "generator": 1,
+                },
+            }
+        ],
+    }
+
+    samples = samples_from_hf_rows_payload(
+        payload,
+        client=FakeClient(),
+        image_column="image",
+        label_column="label",
+        source_column="generator",
+        counters={},
+        max_per_label=None,
+    )
+
+    assert len(samples) == 1
+    assert samples[0].sample_id == "7"
+    assert samples[0].file_name == "image.jpg"
+    assert samples[0].label == "fake"
+    assert samples[0].source == "ADM"
+    assert samples[0].content_type == "image/jpeg"
+
+
+def test_normalize_hf_rows_value_handles_class_label_json() -> None:
+    features = {"label": {"names": ["real", "fake"], "_type": "ClassLabel"}}
+
+    assert normalize_hf_rows_value({"label": 0}, "label", features) == "real"
+    assert normalize_hf_rows_value({"label": "fake"}, "label", features) == "fake"
+
+
+def test_normalize_image_content_type_uses_file_signature_for_octet_stream() -> None:
+    assert normalize_image_content_type("binary/octet-stream", "image.jpg", b"\xff\xd8\xff\xe0") == "image/jpeg"
+    assert normalize_image_content_type("image/png; charset=utf-8", "image.png", b"") == "image/png"
