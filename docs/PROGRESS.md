@@ -195,6 +195,15 @@ cd backend
 
 Result: `35 passed`.
 
+Validated again after URL source support and first-phase fixtures were added:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `39 passed`.
+
 ```bash
 cd backend
 .venv/bin/python scripts/audit_dataset_window.py \
@@ -221,6 +230,23 @@ cd backend
 ```
 
 Result: datasets-server row extraction completed 6 remote samples, labels normalized to `real` and `fake`, generator/source values included `Real`, `ADM`, `BigGAN`, and `CycleGAN`, analyzer success rate `1.0`, combined confidence `medium` (`0.755`), expectation alignment `1.0`, and gate status `passed`. This source is suitable for remote extraction smoke checks, but the first sample set had no C2PA, GB 45438, or EXIF signals, so it is not enough for metadata calibration.
+
+Validated first-phase minimum coverage suite after URL sources and local first-phase fixtures were added:
+
+```bash
+cd backend
+.venv/bin/python scripts/prepare_first_phase_fixtures.py
+.venv/bin/python scripts/audit_dataset_suite.py ../docs/public-dataset-first-phase.example.json \
+  --json-output /private/tmp/trustpic-first-phase-suite.json \
+  --markdown-output /private/tmp/trustpic-first-phase-suite.md
+```
+
+Result: 5 completed sources, 2 skipped candidate sources, 18 total samples, analyzer success rate `1.0`, combined confidence `medium` (`0.7983`), expectation alignment `1.0`, and gate status `passed`. Completed coverage included `AIGC-Detection-Benchmark`, `OpenFake`, public EXIF JPEG samples from `ianare/exif-samples`, `contentauth/c2pa-attacks`, and local TrustPic v0 fixtures for GB 45438/TC260, metadata-stripped, and ELA review smoke.
+
+Candidate source findings:
+
+- `DataSeeds DSD` rows expose EXIF metadata columns, but the downloaded image bytes did not retain EXIF in the smoke run, so it remains disabled as a metadata calibration source.
+- `TrustMyContent/C2PA_Certified_Image_Authenticity` completed a 3-sample probe, but C2PA was absent in downloaded image bytes, so it remains disabled as a C2PA batch source.
 
 ```bash
 cd web
@@ -259,23 +285,16 @@ The v0 goal is not complete until the success criteria in `docs/V0_GOALS.md` are
 
 Highest-priority gaps:
 
-- Replace smoke data with real metadata-preserving public dataset subsets, such as raw AIGC artifact files, DND-Dataset, or Real-World-AIGC variants that keep original source files.
-- Use the verified `AIGC-Detection-Benchmark` `hf_rows` entry for remote extraction smoke only; continue looking for raw/original dataset IDs for metadata calibration.
-- Enable remaining placeholder `docs/public-dataset-remote-catalog.example.json` entries only after replacing Hugging Face IDs with verified raw/original dataset IDs and column names.
-- Add real user-supplied or production-source sample records for:
-  - camera image with EXIF, beyond generated EXIF
-  - metadata-stripped image from an actual platform flow
-  - production C2PA sample from a real tool or device
-  - edited or recompressed image with a known real edit history
+- Increase first-phase suite sample counts once runtime/network limits are acceptable; current confidence is suitable for smoke validation but still below the 50-image calibration floor.
+- Replace the generated GB 45438/TC260 fixture with a real domestic source file when a metadata-preserving public sample becomes available.
+- Add real user-supplied or production-source sample records for a platform-stripped image and a known real edit/recompression flow.
 - Decide whether the upgraded GB 45438 scanner should remain a v0 TC260 XMP/marker scanner or move to a known implementation.
-- Calibrate ELA threshold with real user/production samples instead of generated samples only.
-- Confirm C2PA behavior with a production C2PA image sample, not only a public test/security sample.
+- Calibrate ELA threshold with larger real user/production samples instead of first-phase smoke samples only.
 
 ## Next Recommended Step
 
 Start with backend confidence before expanding product surface:
 
-1. Download or mount the real raw datasets under `/private/tmp/trustpic-datasets/`, or enable verified Hugging Face raw dataset entries in `docs/public-dataset-remote-catalog.example.json`.
-2. Run `scripts/audit_dataset_window.py` to auto-discover available local or remote sources and generate the gated validation report.
+1. Increase `docs/public-dataset-first-phase.example.json` sample counts for the completed sources and re-run the gated suite.
+2. Add a real platform-stripped sample and a known real edit/recompression sample outside git.
 3. Re-run backend tests and frontend build.
-4. Commit the v0 real-sample verification results.

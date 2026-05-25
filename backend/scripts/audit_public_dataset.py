@@ -74,6 +74,8 @@ def main() -> None:
     hf_rows_parser.add_argument("--label-column", default="label", help="Optional label column.")
     hf_rows_parser.add_argument("--source-column", help="Optional source/generator column.")
     hf_rows_parser.add_argument("--offset", type=int, default=0, help="Starting row offset for the rows API.")
+    hf_rows_parser.add_argument("--default-label", help="Fallback label when the rows payload has no label column.")
+    hf_rows_parser.add_argument("--default-source", help="Fallback source when the rows payload has no source column.")
 
     args = parser.parse_args()
 
@@ -108,6 +110,8 @@ def main() -> None:
             label_column=args.label_column,
             source_column=args.source_column,
             offset=args.offset,
+            default_label=args.default_label,
+            default_source=args.default_source,
             max_samples=args.max_samples,
             max_per_label=args.max_per_label,
         )
@@ -258,6 +262,8 @@ def iter_huggingface_rows_samples(
     label_column: str | None,
     source_column: str | None,
     offset: int = 0,
+    default_label: str | None = None,
+    default_source: str | None = None,
     max_samples: int | None,
     max_per_label: int | None,
 ) -> list[DatasetSample]:
@@ -298,6 +304,8 @@ def iter_huggingface_rows_samples(
                 image_column=image_column,
                 label_column=label_column,
                 source_column=source_column,
+                default_label=default_label,
+                default_source=default_source,
                 counters=counters,
                 max_per_label=max_per_label,
             )
@@ -339,6 +347,8 @@ def samples_from_hf_rows_payload(
     image_column: str,
     label_column: str | None,
     source_column: str | None,
+    default_label: str | None,
+    default_source: str | None,
     counters: dict[str, int],
     max_per_label: int | None,
 ) -> list[DatasetSample]:
@@ -346,7 +356,7 @@ def samples_from_hf_rows_payload(
     samples: list[DatasetSample] = []
     for item in payload.get("rows", []):
         row = item.get("row", {})
-        label = normalize_hf_rows_value(row, label_column, features) if label_column else None
+        label = normalize_hf_rows_value(row, label_column, features) if label_column else default_label
         counter_key = label or "unlabeled"
         if max_per_label is not None and counters.get(counter_key, 0) >= max_per_label:
             continue
@@ -357,11 +367,45 @@ def samples_from_hf_rows_payload(
             client=client,
             sample_id=str(item.get("row_idx")),
             label=label,
-            source=normalize_hf_rows_value(row, source_column, features) if source_column else None,
+            source=normalize_hf_rows_value(row, source_column, features) if source_column else default_source,
         )
         samples.append(sample)
         counters[counter_key] = counters.get(counter_key, 0) + 1
     return samples
+
+
+def iter_url_samples(urls: list, *, max_samples: int | None = None) -> list[DatasetSample]:
+    try:
+        import httpx
+    except ImportError as exc:
+        raise SystemExit(
+            "URL audit requires httpx. "
+            "Install dev dependencies with: cd backend && .venv/bin/python -m pip install -e '.[dev,datasets]'"
+        ) from exc
+
+    entries = urls[:max_samples] if max_samples is not None else urls
+    with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+        return [sample_from_url_entry(entry, client=client, index=index) for index, entry in enumerate(entries)]
+
+
+def sample_from_url_entry(entry: object, *, client, index: int) -> DatasetSample:
+    if isinstance(entry, str):
+        entry = {"url": entry}
+    if not isinstance(entry, dict) or not entry.get("url"):
+        raise SystemExit(f"URL source entry {index} must be a URL string or object with a 'url' key.")
+
+    url = str(entry["url"])
+    response = client.get(url)
+    response.raise_for_status()
+    file_name = entry.get("file_name") or url.split("?", 1)[0].rstrip("/").rsplit("/", 1)[-1] or f"url-{index}.image"
+    return DatasetSample(
+        sample_id=str(entry.get("sample_id") or file_name or index),
+        file_name=str(file_name),
+        label=normalize_value(entry.get("label")),
+        source=normalize_value(entry.get("source")),
+        image_bytes=response.content,
+        content_type=normalize_image_content_type(response.headers.get("content-type"), str(file_name), response.content),
+    )
 
 
 def sample_from_hf_rows_image(

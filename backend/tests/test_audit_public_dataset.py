@@ -12,6 +12,7 @@ from scripts.audit_public_dataset import (
     render_markdown,
     samples_from_hf_rows_payload,
     sample_from_hf_row,
+    sample_from_url_entry,
 )
 
 
@@ -138,6 +139,8 @@ def test_hf_rows_payload_downloads_image_and_uses_class_label_names() -> None:
         image_column="image",
         label_column="label",
         source_column="generator",
+        default_label=None,
+        default_source=None,
         counters={},
         max_per_label=None,
     )
@@ -160,3 +163,68 @@ def test_normalize_hf_rows_value_handles_class_label_json() -> None:
 def test_normalize_image_content_type_uses_file_signature_for_octet_stream() -> None:
     assert normalize_image_content_type("binary/octet-stream", "image.jpg", b"\xff\xd8\xff\xe0") == "image/jpeg"
     assert normalize_image_content_type("image/png; charset=utf-8", "image.png", b"") == "image/png"
+
+
+def test_hf_rows_payload_can_use_default_label_and_source() -> None:
+    image = Image.new("RGB", (16, 16), color=(30, 90, 150))
+    out = BytesIO()
+    image.save(out, format="JPEG")
+
+    class FakeResponse:
+        headers = {"content-type": "binary/octet-stream"}
+        content = out.getvalue()
+
+        def raise_for_status(self) -> None:
+            pass
+
+    class FakeClient:
+        def get(self, url):
+            return FakeResponse()
+
+    payload = {"features": [{"name": "image", "type": {"_type": "Image"}}], "rows": [{"row_idx": 1, "row": {"image": {"src": "https://example.test/image"}}}]}
+    samples = samples_from_hf_rows_payload(
+        payload,
+        client=FakeClient(),
+        image_column="image",
+        label_column=None,
+        source_column=None,
+        default_label="exif_photo",
+        default_source="DataSeeds DSD",
+        counters={},
+        max_per_label=None,
+    )
+
+    assert samples[0].label == "exif_photo"
+    assert samples[0].source == "DataSeeds DSD"
+    assert samples[0].content_type == "image/jpeg"
+
+
+def test_sample_from_url_entry_downloads_bytes_and_metadata() -> None:
+    class FakeResponse:
+        headers = {"content-type": "binary/octet-stream"}
+        content = b"\xff\xd8\xff\xe0url-test"
+
+        def raise_for_status(self) -> None:
+            pass
+
+    class FakeClient:
+        def get(self, url):
+            assert url == "https://example.test/C.jpg"
+            return FakeResponse()
+
+    sample = sample_from_url_entry(
+        {
+            "url": "https://example.test/C.jpg",
+            "file_name": "C.jpg",
+            "label": "c2pa_positive",
+            "source": "contentauth/c2pa-attacks",
+        },
+        client=FakeClient(),
+        index=0,
+    )
+
+    assert sample.sample_id == "C.jpg"
+    assert sample.file_name == "C.jpg"
+    assert sample.label == "c2pa_positive"
+    assert sample.source == "contentauth/c2pa-attacks"
+    assert sample.content_type == "image/jpeg"

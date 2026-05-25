@@ -158,25 +158,34 @@ def normalize_remote_source(source: dict) -> dict | None:
     if source.get("enabled", True) is False:
         return None
     mode = source.get("mode", "hf")
-    if mode not in {"hf", "hf_rows"}:
+    if mode not in {"hf", "hf_rows", "url"}:
         raise SystemExit(
-            f"Remote catalog source '{source.get('name', 'unnamed-source')}' must use mode 'hf' or 'hf_rows'."
+            f"Remote catalog source '{source.get('name', 'unnamed-source')}' must use mode 'hf', 'hf_rows', or 'url'."
         )
-    if not source.get("dataset"):
+    if mode in {"hf", "hf_rows"} and not source.get("dataset"):
         raise SystemExit(f"Remote catalog source '{source.get('name', 'unnamed-source')}' is missing dataset.")
+    if mode == "url" and not source.get("urls"):
+        raise SystemExit(f"Remote catalog source '{source.get('name', 'unnamed-source')}' is missing urls.")
 
-    name = source.get("name") or source["dataset"]
+    name = source.get("name") or source.get("dataset") or "url-source"
     preset = KNOWN_DATASETS.get(name, {})
     normalized = {
         "name": name,
         "mode": mode,
-        "dataset": source["dataset"],
+        "dataset": source.get("dataset"),
+        "urls": source.get("urls"),
         "metadata_policy": source.get("metadata_policy", preset.get("metadata_policy", "remote raw bytes via HF dataset")),
         "config": source.get("config"),
         "split": source.get("split", "train"),
         "image_column": source.get("image_column", "image"),
-        "label_column": source.get("label_column", "label"),
-        "source_column": source.get("source_column"),
+        "label_column": source.get("label_column")
+        if "label_column" in source
+        else None
+        if source.get("default_label")
+        else "label",
+        "source_column": source.get("source_column") if "source_column" in source else None,
+        "default_label": source.get("default_label"),
+        "default_source": source.get("default_source"),
         "streaming": bool(source.get("streaming", True)),
         "offset": source.get("offset"),
         "max_per_label": source.get("max_per_label"),

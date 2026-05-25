@@ -140,6 +140,37 @@ If Hugging Face network access is unstable, download or mount the raw dataset fi
 
 For large Hugging Face parquet datasets where `datasets.load_dataset` prepares too many shards for a smoke check, use `mode: "hf_rows"` in the remote catalog. This mode reads the Hugging Face datasets-server `/rows` API, downloads the returned image URLs, normalizes octet-stream image responses by file signature, and sends the bytes to the same TrustPic analyzer. Use it for remote extraction and label/source coverage smoke checks, not for metadata-preserving calibration.
 
+For direct public sample URLs, use `mode: "url"` in a suite config. This is the preferred first-phase path for stable public C2PA and EXIF fixtures because TrustPic analyzes the downloaded image bytes directly.
+
+## First-Phase Minimum Coverage Suite
+
+The first-phase suite combines the minimum coverage set from `CONTEXT.md`: remote extraction smoke, generator benchmark coverage, real EXIF bytes, C2PA positive sample, GB 45438 fixture, metadata-stripped fixture, and ELA review smoke.
+
+Prepare the local generated fixture source:
+
+```bash
+cd backend
+.venv/bin/python scripts/prepare_first_phase_fixtures.py
+```
+
+Run the gated suite:
+
+```bash
+cd backend
+.venv/bin/python scripts/audit_dataset_suite.py ../docs/public-dataset-first-phase.example.json \
+  --json-output /private/tmp/trustpic-first-phase-suite.json \
+  --markdown-output /private/tmp/trustpic-first-phase-suite.md
+```
+
+Current first-phase source notes:
+
+- `AIGC-Detection-Benchmark` and `OpenFake` are remote extraction and generator-label smoke sources.
+- `ianare/exif-samples` is the first required EXIF source because the raw JPEG bytes retain camera EXIF.
+- `contentauth/c2pa-attacks` is the first required C2PA source.
+- `TrustPic-V0-Fixtures` covers GB 45438/TC260, metadata-stripped, and ELA review smoke.
+- `DataSeeds DSD` remains disabled in the first-phase config. Its rows expose EXIF metadata columns, but the downloaded image bytes did not retain EXIF in the smoke run.
+- `TrustMyContent/C2PA_Certified_Image_Authenticity` remains disabled. A 3-sample probe completed, but C2PA was absent in the downloaded image bytes.
+
 ## Auto Validation Window
 
 Use the validation window when you want TrustPic to scan available sources and run the suite automatically.
