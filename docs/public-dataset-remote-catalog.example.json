@@ -1,0 +1,49 @@
+{
+  "sources": [
+    {
+      "name": "AIGC-Artifacts-Raw",
+      "mode": "hf",
+      "enabled": false,
+      "dataset": "ORG_OR_USER/AIGC-Artifacts-Raw",
+      "split": "train",
+      "image_column": "image",
+      "label_column": "label",
+      "source_column": "source",
+      "streaming": true,
+      "max_per_label": 25,
+      "metadata_policy": "raw/original files only; do not use WebP classification mirror",
+      "expectations": {
+        "real": {
+          "verdict": ["no_supported_signal_found", "review_recommended"]
+        },
+        "fake": {
+          "verdict": ["supported_signal_detected", "review_recommended", "no_supported_signal_found"]
+        }
+      }
+    },
+    {
+      "name": "DND-Dataset",
+      "mode": "hf",
+      "enabled": false,
+      "dataset": "ORG_OR_USER/DND-Dataset",
+      "split": "train",
+      "image_column": "image",
+      "label_column": "label",
+      "source_column": "source",
+      "streaming": true,
+      "max_per_label": 25
+    },
+    {
+      "name": "Real-World-AIGC",
+      "mode": "hf",
+      "enabled": false,
+      "dataset": "ORG_OR_USER/Real-World-AIGC",
+      "split": "train",
+      "image_column": "image",
+      "label_column": "label",
+      "source_column": "source",
+      "streaming": true,
+      "max_per_label": 25
+    }
+  ]
+}
