@@ -58,13 +58,13 @@ def generate_samples(output_dir: Path) -> list[Path]:
     edited.save(edited_path, format="JPEG", quality=62)
     sample_paths.append(edited_path)
 
-    ela_review = Image.new("RGB", (320, 220), color=(255, 255, 255))
+    ela_review = Image.new("RGB", (320, 220), color=(128, 128, 128))
     draw = ImageDraw.Draw(ela_review)
-    for x in range(0, 320, 4):
-        color = (0, 0, 0) if x % 8 == 0 else (255, 255, 255)
-        draw.rectangle((x, 0, x + 3, 220), fill=color)
-    for y in range(0, 220, 8):
-        draw.line((0, y, 319, y), fill=(220, 30, 30), width=1)
+    for x in range(112, 208, 2):
+        color = (20, 20, 20) if x % 4 == 0 else (235, 235, 235)
+        draw.rectangle((x, 58, x + 1, 154), fill=color)
+    for y in range(58, 154, 4):
+        draw.line((112, y, 207, y), fill=(230, 40, 40), width=1)
     ela_review_path = output_dir / "ela-review-compressed.jpg"
     ela_review.save(ela_review_path, format="JPEG", quality=35)
     sample_paths.append(ela_review_path)

@@ -27,13 +27,13 @@ def _jpeg_with_exif_bytes() -> bytes:
 
 
 def _ela_review_jpeg_bytes() -> bytes:
-    image = Image.new("RGB", (160, 120), color=(255, 255, 255))
+    image = Image.new("RGB", (160, 120), color=(128, 128, 128))
     draw = ImageDraw.Draw(image)
-    for x in range(0, 160, 4):
-        color = (0, 0, 0) if x % 8 == 0 else (255, 255, 255)
-        draw.rectangle((x, 0, x + 3, 120), fill=color)
-    for y in range(0, 120, 8):
-        draw.line((0, y, 159, y), fill=(220, 30, 30), width=1)
+    for x in range(48, 112, 2):
+        color = (20, 20, 20) if x % 4 == 0 else (235, 235, 235)
+        draw.rectangle((x, 32, x + 1, 96), fill=color)
+    for y in range(32, 96, 4):
+        draw.line((48, y, 111, y), fill=(230, 40, 40), width=1)
     out = BytesIO()
     image.save(out, format="JPEG", quality=35)
     return out.getvalue()
@@ -65,7 +65,7 @@ def test_analyze_png_returns_report_shape() -> None:
     assert payload["interpretation"]["conclusion"] == "没有发现这张图是 AI 生成或被明显处理的证据。"
     assert [item["title"] for item in payload["interpretation"]["evidence_chain"]] == [
         "AI 生成标记",
-        "压缩/编辑痕迹",
+        "局部差异线索",
         "图片来源记录",
         "拍摄/编辑信息",
     ]
@@ -200,8 +200,10 @@ def test_high_error_jpeg_returns_review_recommended() -> None:
     assert payload["verdict"] == "review_recommended"
     assert payload["signals"]["ela"]["detected"] is True
     assert payload["signals"]["ela"]["status"] == "review"
+    assert payload["signals"]["ela"]["details"]["local_anomaly_detected"] is True
+    assert payload["signals"]["ela"]["details"]["local_anomaly_count"] >= 2
     assert payload["interpretation"]["confidence_label"] == "中等"
-    assert payload["interpretation"]["conclusion"] == "发现明显的压缩或编辑痕迹。"
+    assert payload["interpretation"]["conclusion"] == "发现局部区域存在压缩差异集中线索。"
     ela_evidence = payload["interpretation"]["evidence_chain"][1]
-    assert ela_evidence["title"] == "压缩/编辑痕迹"
+    assert ela_evidence["title"] == "局部差异线索"
     assert ela_evidence["status_label"] == "需留意"

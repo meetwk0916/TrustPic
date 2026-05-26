@@ -73,7 +73,9 @@ def summarize_signal(signals: dict, name: str) -> dict:
         summary["field_count"] = details.get("field_count")
     if name == "ela" and isinstance(details, dict):
         summary["mean_error"] = details.get("mean_error")
-        summary["review_threshold"] = details.get("review_threshold")
+        summary["local_anomaly_detected"] = details.get("local_anomaly_detected")
+        summary["local_anomaly_count"] = details.get("local_anomaly_count")
+        summary["local_anomaly_ratio"] = details.get("local_anomaly_ratio")
     return summary
 
 
@@ -81,8 +83,8 @@ def render_markdown(results: list[dict]) -> str:
     lines = [
         "# TrustPic Real Sample Audit",
         "",
-        "| file | verdict | C2PA | GB45438 | EXIF fields | ELA | ELA mean |",
-        "|---|---|---:|---:|---:|---:|---:|",
+        "| file | verdict | C2PA | GB45438 | EXIF fields | ELA | ELA mean | local anomalies |",
+        "|---|---|---:|---:|---:|---:|---:|---:|",
     ]
     for item in results:
         lines.append(
@@ -93,7 +95,8 @@ def render_markdown(results: list[dict]) -> str:
             f"{item['gb45438'].get('status')} | "
             f"{item['exif'].get('field_count')} | "
             f"{item['ela'].get('status')} | "
-            f"{item['ela'].get('mean_error')} |"
+            f"{item['ela'].get('mean_error')} | "
+            f"{item['ela'].get('local_anomaly_count')} |"
         )
     lines.append("")
     return "\n".join(lines)

@@ -25,7 +25,7 @@ def human_conclusion(signals: ReportSignals) -> str:
     if ai_related_source_record(signals.c2pa):
         return "图片来源记录显示这张图与 AI 生成来源有关。"
     if signals.ela.detected:
-        return "发现明显的压缩或编辑痕迹。"
+        return "发现局部区域存在压缩差异集中线索。"
     if signals.c2pa.detected:
         if c2pa_validation_state(signals.c2pa) == "Valid":
             return "发现这张图带有可验证的来源记录。"
@@ -101,33 +101,35 @@ def ai_marker_evidence(signal: EvidenceSignal, c2pa_signal: EvidenceSignal | Non
 
 def ela_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
     mean_error = signal.details.get("mean_error") if isinstance(signal.details, dict) else None
+    anomaly_count = signal.details.get("local_anomaly_count") if isinstance(signal.details, dict) else None
+    anomaly_ratio = signal.details.get("local_anomaly_ratio") if isinstance(signal.details, dict) else None
     if not signal.checked:
         return InterpretationEvidence(
             key="ela",
-            title="压缩/编辑痕迹",
+            title="局部差异线索",
             status_label="无法分析",
-            summary="这次没有完成压缩差异检查。",
+            summary="这次没有完成局部差异检查。",
             means="TrustPic 没有得到这一项证据。",
-            does_not_mean="这不代表图片没有经过压缩、编辑或转发。",
+            does_not_mean="这不代表图片没有局部编辑或异常差异。",
             details=signal.details,
         )
     if signal.detected:
         return InterpretationEvidence(
             key="ela",
-            title="压缩/编辑痕迹",
+            title="局部差异线索",
             status_label="需留意",
-            summary="发现明显的压缩差异。",
-            means=f"ELA 指标较高，本次 mean error 为 {mean_error}。",
-            does_not_mean="压缩差异可能来自保存、截图、平台转发或编辑；它不能单独证明图片被 P 过或由 AI 生成。",
+            summary="发现局部区域的压缩差异集中。",
+            means=f"ELA tile 分析发现 {anomaly_count} 个局部异常块，占比 {anomaly_ratio}，全图 mean error 为 {mean_error}。",
+            does_not_mean="这只是局部差异线索，不能单独证明图片被 P 过、被恶意篡改或由 AI 生成。",
             details=signal.details,
         )
     return InterpretationEvidence(
         key="ela",
-        title="压缩/编辑痕迹",
+        title="局部差异线索",
         status_label="未发现",
-        summary="没有发现明显压缩差异。",
-        means=f"ELA 指标低于当前阈值，本次 mean error 为 {mean_error}。",
-        does_not_mean="这不代表图片没有被处理过；轻微编辑、重采样或平台压缩可能不会形成明显 ELA 差异。",
+        summary="没有发现局部差异集中线索。",
+        means=f"没有发现少量区域明显偏离整体压缩模式；全图 mean error 为 {mean_error}。",
+        does_not_mean="整体压缩、截图、平台转码属于常见流转行为；没有局部差异线索也不代表图片一定没有被编辑。",
         details=signal.details,
     )
 

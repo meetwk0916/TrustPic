@@ -172,7 +172,7 @@ function App() {
 
                 {report.assets.ela_heatmap_data_url && (
                   <section className="heatmap">
-                    <h2>压缩差异图</h2>
+                    <h2>局部差异热图</h2>
                     <img src={report.assets.ela_heatmap_data_url} alt="ELA heatmap" />
                   </section>
                 )}
