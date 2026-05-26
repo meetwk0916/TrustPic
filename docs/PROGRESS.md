@@ -347,6 +347,22 @@ npm run build
 
 Result: TypeScript build and Vite production build passed.
 
+Validated after `docs/V0_GOALS.md` was aligned to the current `interpretation` report contract:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `43 passed`.
+
+```bash
+cd web
+npm run build
+```
+
+Result: TypeScript build and Vite production build passed.
+
 ```bash
 git diff --check
 ```
