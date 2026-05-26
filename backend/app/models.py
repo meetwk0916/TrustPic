@@ -30,12 +30,29 @@ class ReportAssets(BaseModel):
     ela_heatmap_data_url: str | None = None
 
 
+class InterpretationEvidence(BaseModel):
+    key: Literal["gb45438", "ela", "c2pa", "exif"]
+    title: str
+    status_label: Literal["支持证据", "需留意", "未发现", "无法分析"]
+    summary: str
+    means: str
+    does_not_mean: str
+    details: dict = Field(default_factory=dict)
+
+
+class ReportInterpretation(BaseModel):
+    confidence_label: Literal["强", "较强", "中等", "有限"]
+    conclusion: str
+    evidence_chain: list[InterpretationEvidence]
+    limits: list[str]
+
+
 class AnalyzeResponse(BaseModel):
     status: Literal["success"] = "success"
     verdict: Verdict
     summary: str
     signals: ReportSignals
+    interpretation: ReportInterpretation
     limitations: list[str]
     recommendation: str
     assets: ReportAssets = Field(default_factory=ReportAssets)
-

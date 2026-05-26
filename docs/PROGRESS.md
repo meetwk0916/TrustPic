@@ -1,6 +1,6 @@
 # TrustPic Progress
 
-Last aligned: 2026-05-25
+Last aligned: 2026-05-26
 
 ## Current State
 
@@ -11,8 +11,8 @@ The current implementation includes:
 - Backend FastAPI service with `GET /api/v1/health` and `POST /api/v1/analyze`.
 - Single-image upload validation for JPG, PNG, and WebP MIME types.
 - Evidence modules for C2PA read attempts, GB 45438/AIGC byte-marker scan, EXIF summary, and ELA heatmap generation.
-- Evidence-first report contract with verdict, summary, signals, limitations, recommendation, and `assets.ela_heatmap_data_url`.
-- React + Vite Web UI for selecting an image, previewing it, showing file metadata, calling the backend, and displaying the report, signal details, and ELA heatmap.
+- Evidence-first report contract with verdict, summary, signals, human-readable `interpretation`, limitations, recommendation, and `assets.ela_heatmap_data_url`.
+- React + Vite Web UI for selecting an image, previewing it, showing file metadata, calling the backend, and displaying a user-readable conclusion, confidence label, ordered evidence chain, foldable evidence explanations, boundary notes, and ELA heatmap.
 - Local sample-image generator for repeatable smoke checks.
 - Strict generated/public sample verifier, ELA calibration script, real-sample directory audit script, public dataset audit script, multi-source dataset suite runner, and auto validation window.
 - CodeGraph index initialized for the project.
@@ -247,6 +247,22 @@ Candidate source findings:
 
 - `DataSeeds DSD` rows expose EXIF metadata columns, but the downloaded image bytes did not retain EXIF in the smoke run, so it remains disabled as a metadata calibration source.
 - `TrustMyContent/C2PA_Certified_Image_Authenticity` completed a 3-sample probe, but C2PA was absent in downloaded image bytes, so it remains disabled as a C2PA batch source.
+
+```bash
+cd web
+npm run build
+```
+
+Result: TypeScript build and Vite production build passed.
+
+Validated on 2026-05-26 after the report interpretation layer and UI were added:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `39 passed`.
 
 ```bash
 cd web

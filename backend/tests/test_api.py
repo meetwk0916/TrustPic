@@ -61,6 +61,14 @@ def test_analyze_png_returns_report_shape() -> None:
         "unsupported",
     }
     assert set(payload["signals"]) == {"c2pa", "gb45438", "exif", "ela"}
+    assert payload["interpretation"]["confidence_label"] == "有限"
+    assert payload["interpretation"]["conclusion"] == "没有发现这张图是 AI 生成或被明显处理的证据。"
+    assert [item["title"] for item in payload["interpretation"]["evidence_chain"]] == [
+        "AI 生成标记",
+        "压缩/编辑痕迹",
+        "图片来源记录",
+        "拍摄/编辑信息",
+    ]
     assert payload["assets"]["ela_heatmap_data_url"].startswith("data:image/jpeg;base64,")
 
 
@@ -128,6 +136,10 @@ def test_gb45438_marker_changes_verdict_to_supported_signal() -> None:
     assert payload["verdict"] == "supported_signal_detected"
     assert payload["signals"]["gb45438"]["detected"] is True
     assert payload["signals"]["gb45438"]["details"]["matched_terms"] == ["AI_GENERATED"]
+    assert payload["interpretation"]["confidence_label"] == "强"
+    assert payload["interpretation"]["conclusion"] == "发现这张图带有 AI 生成相关标记。"
+    assert payload["interpretation"]["evidence_chain"][0]["title"] == "AI 生成标记"
+    assert payload["interpretation"]["evidence_chain"][0]["status_label"] == "支持证据"
 
 
 def test_gb45438_tc260_xmp_fields_change_verdict_to_supported_signal() -> None:
@@ -170,6 +182,11 @@ def test_exif_jpeg_reports_metadata_fields() -> None:
     assert exif["status"] == "present"
     assert exif["details"]["fields"]["Make"] == "TrustPic Camera"
     assert exif["details"]["fields"]["Model"] == "V0 EXIF Sample"
+    assert payload["interpretation"]["confidence_label"] == "中等"
+    assert payload["interpretation"]["conclusion"] == "发现这张图包含拍摄或编辑信息，但没有发现 AI 生成标记。"
+    exif_evidence = payload["interpretation"]["evidence_chain"][3]
+    assert exif_evidence["title"] == "拍摄/编辑信息"
+    assert exif_evidence["status_label"] == "支持证据"
 
 
 def test_high_error_jpeg_returns_review_recommended() -> None:
@@ -183,3 +200,8 @@ def test_high_error_jpeg_returns_review_recommended() -> None:
     assert payload["verdict"] == "review_recommended"
     assert payload["signals"]["ela"]["detected"] is True
     assert payload["signals"]["ela"]["status"] == "review"
+    assert payload["interpretation"]["confidence_label"] == "中等"
+    assert payload["interpretation"]["conclusion"] == "发现明显的压缩或编辑痕迹。"
+    ela_evidence = payload["interpretation"]["evidence_chain"][1]
+    assert ela_evidence["title"] == "压缩/编辑痕迹"
+    assert ela_evidence["status_label"] == "需留意"
