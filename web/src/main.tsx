@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FormEvent, useState } from "react";
+import React, { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
@@ -51,12 +51,30 @@ type AnalyzeResponse = {
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
 
+type Theme = "light" | "dark";
+
+function preferredTheme(): Theme {
+  if (typeof window === "undefined") return "light";
+  const savedTheme = window.localStorage.getItem("trustpic-theme");
+  if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
 function App() {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [report, setReport] = useState<AnalyzeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [theme, setTheme] = useState<Theme>(preferredTheme);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem("trustpic-theme", theme);
+  }, [theme]);
+
+  const coreEvidence = report?.interpretation.evidence_chain.filter((item) => item.key !== "ela") ?? [];
+  const localDifference = report?.interpretation.evidence_chain.find((item) => item.key === "ela") ?? null;
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const selected = event.target.files?.[0] ?? null;
@@ -108,7 +126,17 @@ function App() {
             <h1>TrustPic</h1>
             <p>Single-image evidence report</p>
           </div>
-          <span className="status-pill">v0</span>
+          <div className="topbar-actions">
+            <button
+              className="theme-toggle"
+              type="button"
+              aria-label="切换明暗模式"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+              {theme === "dark" ? "亮色" : "暗色"}
+            </button>
+            <span className="status-pill">v0</span>
+          </div>
         </header>
 
         <form className="upload-panel" onSubmit={handleSubmit}>
@@ -168,14 +196,7 @@ function App() {
                   </div>
                 </section>
 
-                <EvidenceChain evidence={report.interpretation.evidence_chain} />
-
-                {report.assets.ela_heatmap_data_url && (
-                  <section className="heatmap">
-                    <h2>局部差异热图</h2>
-                    <img src={report.assets.ela_heatmap_data_url} alt="ELA heatmap" />
-                  </section>
-                )}
+                <EvidenceChain evidence={coreEvidence} />
 
                 <section className="text-section">
                   <h2>边界说明</h2>
@@ -185,6 +206,13 @@ function App() {
                     ))}
                   </ul>
                 </section>
+
+                {localDifference && (
+                  <LocalDifferenceSection
+                    evidence={localDifference}
+                    heatmapUrl={report.assets.ela_heatmap_data_url}
+                  />
+                )}
               </>
             ) : (
               <div className="empty-state">Report will appear here</div>
@@ -199,42 +227,69 @@ function App() {
 function EvidenceChain({ evidence }: { evidence: InterpretationEvidence[] }) {
   return (
     <section className="evidence-chain">
-      <h2>证据链</h2>
+      <h2>核心证据</h2>
       <div className="evidence-list">
         {evidence.map((item) => (
-          <article className="evidence-card" key={item.key}>
-            <header>
-              <div>
-                <h3>{item.title}</h3>
-                <p>{item.summary}</p>
-              </div>
-              <span className={`evidence-status ${statusClass(item.status_label)}`}>
-                {item.status_label}
-              </span>
-            </header>
-            <details className="evidence-details">
-              <summary>展开解释</summary>
-              <div className="explain-grid">
-                <div>
-                  <h4>能说明什么</h4>
-                  <p>{item.means}</p>
-                </div>
-                <div>
-                  <h4>不能说明什么</h4>
-                  <p>{item.does_not_mean}</p>
-                </div>
-              </div>
-              {Object.keys(item.details).length > 0 && (
-                <details className="technical-details">
-                  <summary>技术细节</summary>
-                  <pre>{JSON.stringify(item.details, null, 2)}</pre>
-                </details>
-              )}
-            </details>
-          </article>
+          <EvidenceArticle item={item} key={item.key} />
         ))}
       </div>
     </section>
+  );
+}
+
+function LocalDifferenceSection({
+  evidence,
+  heatmapUrl,
+}: {
+  evidence: InterpretationEvidence;
+  heatmapUrl: string | null;
+}) {
+  return (
+    <section className="local-difference-section">
+      <h2>局部差异分析</h2>
+      <EvidenceArticle item={evidence} />
+      {heatmapUrl && (
+        <div className="heatmap">
+          <h3>局部差异热图</h3>
+          <img src={heatmapUrl} alt="ELA heatmap" />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function EvidenceArticle({ item }: { item: InterpretationEvidence }) {
+  return (
+    <article className={`evidence-card evidence-${item.key}`}>
+      <header>
+        <div>
+          <h3>{item.title}</h3>
+          <p>{item.summary}</p>
+        </div>
+        <span className={`evidence-status ${statusClass(item.status_label)} signal-${item.key}`}>
+          {item.status_label}
+        </span>
+      </header>
+      <details className="evidence-details">
+        <summary>展开解释</summary>
+        <div className="explain-grid">
+          <div>
+            <h4>能说明什么</h4>
+            <p>{item.means}</p>
+          </div>
+          <div>
+            <h4>不能说明什么</h4>
+            <p>{item.does_not_mean}</p>
+          </div>
+        </div>
+        {Object.keys(item.details).length > 0 && (
+          <details className="technical-details">
+            <summary>技术细节</summary>
+            <pre>{JSON.stringify(item.details, null, 2)}</pre>
+          </details>
+        )}
+      </details>
+    </article>
   );
 }
 

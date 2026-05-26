@@ -338,6 +338,15 @@ npm run build
 
 Result: TypeScript build and Vite production build passed.
 
+Validated after the report UI was reorganized with key-signal colors, dark mode, and local-difference card/heatmap grouping:
+
+```bash
+cd web
+npm run build
+```
+
+Result: TypeScript build and Vite production build passed.
+
 ```bash
 git diff --check
 ```
