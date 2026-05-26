@@ -37,7 +37,11 @@ def inspect_c2pa(image_bytes: bytes, content_type: str) -> EvidenceSignal:
         "openai",
         "dall-e",
         "dalle",
+        "gemini",
+        "notebooklm",
         "imagen",
+        "synthid",
+        "nano banana",
         "midjourney",
     ]
     is_ai_related = any(term in manifest_text for term in ai_terms)
