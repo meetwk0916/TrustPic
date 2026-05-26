@@ -88,6 +88,11 @@ If detected and valid:
 
 If the source record includes AI-related provenance, such as OpenAI, the user-facing summary should say that this is an AI-related source record.
 
+For Google-family records:
+
+- `Gemini`, `NotebookLM`, `Imagen`, `SynthID`, or `Nano Banana` in the source record should be treated as AI-related source evidence.
+- `Google` as the only signer/source name is not enough to claim AI generation, because Google can sign non-AI provenance records too. In that case the report should say that a Google source record was found, but the AI product name was not explicit.
+
 If detected but incomplete or abnormal:
 
 - Status: `需留意`
