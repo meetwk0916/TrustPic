@@ -134,6 +134,7 @@ def test_cli_gate_requested_only_when_gate_args_are_present() -> None:
             min_confidence_level=None,
             min_confidence_score=None,
             require_completed_sources=None,
+            require_total_samples=None,
             min_alignment_rate=None,
         )
     ) is False
@@ -142,6 +143,7 @@ def test_cli_gate_requested_only_when_gate_args_are_present() -> None:
             min_confidence_level="medium",
             min_confidence_score=None,
             require_completed_sources=None,
+            require_total_samples=None,
             min_alignment_rate=None,
         )
     ) is True
@@ -209,3 +211,18 @@ def test_combine_expectation_summaries_marks_unconfigured_when_empty() -> None:
         "alignment_rate": None,
         "mismatches": [],
     }
+
+
+def test_total_sample_gate_fails_when_sample_count_is_low(tmp_path) -> None:
+    raw_source = tmp_path / "real-world-aigc"
+    _write_png(raw_source / "real" / "camera.png")
+    payload = run_suite(
+        {
+            "suite": "trustpic-public-smoke",
+            "gate": {"require_total_samples": 2},
+            "sources": [{"name": "Real-World-AIGC", "mode": "local", "path": str(raw_source)}],
+        }
+    )
+
+    assert payload["gate"]["status"] == "failed"
+    assert "Total sample count 1 is below required count 2." in payload["gate"]["failures"]

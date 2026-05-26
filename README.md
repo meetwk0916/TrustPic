@@ -10,12 +10,15 @@ The v0 goal is not to prove whether every image is real or AI-generated. The v0 
 - [v0 goals](docs/V0_GOALS.md)
 - [technical stack](docs/TECH_STACK.md)
 - [current progress](docs/PROGRESS.md)
+- [v0 release checklist](docs/V0_RELEASE_CHECKLIST.md)
 - [sample verification](docs/SAMPLE_VERIFICATION.md)
 - [ELA calibration](docs/ELA_CALIBRATION.md)
 - [real sample intake](docs/REAL_SAMPLE_INTAKE.md)
+- [v0 real sample suite](docs/V0_REAL_SAMPLE_SUITE.md)
 - [report interpretation guide](docs/REPORT_INTERPRETATION_GUIDE.md)
 - [public dataset suite example](docs/public-dataset-suite.example.json)
 - [first-phase minimum coverage suite](docs/public-dataset-first-phase.example.json)
+- [v0 release coverage suite](docs/public-dataset-v0-release.example.json)
 - [public dataset remote catalog example](docs/public-dataset-remote-catalog.example.json)
 
 ## Local Development
