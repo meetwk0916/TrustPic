@@ -60,7 +60,12 @@ def inspect_sample(path: Path) -> dict:
         "status": signal.status,
         "detected": signal.detected,
         "mean_error": signal.details["mean_error"],
-        "review_threshold": signal.details["review_threshold"],
+        "tile_size": signal.details["tile_size"],
+        "tile_count": signal.details["tile_count"],
+        "local_threshold": signal.details["local_threshold"],
+        "local_anomaly_detected": signal.details["local_anomaly_detected"],
+        "local_anomaly_count": signal.details["local_anomaly_count"],
+        "local_anomaly_ratio": signal.details["local_anomaly_ratio"],
         "jpeg_quality": signal.details["jpeg_quality"],
         "amplification": signal.details["amplification"],
     }
@@ -70,12 +75,13 @@ def render_markdown(results: list[dict]) -> str:
     lines = [
         "# ELA Calibration Snapshot",
         "",
-        "| file | status | mean_error | review_threshold |",
-        "|---|---:|---:|---:|",
+        "| file | status | mean_error | local_threshold | local_anomaly_count | local_anomaly_ratio |",
+        "|---|---:|---:|---:|---:|---:|",
     ]
     for item in results:
         lines.append(
-            f"| `{item['file']}` | {item['status']} | {item['mean_error']} | {item['review_threshold']} |"
+            f"| `{item['file']}` | {item['status']} | {item['mean_error']} | "
+            f"{item['local_threshold']} | {item['local_anomaly_count']} | {item['local_anomaly_ratio']} |"
         )
     lines.append("")
     return "\n".join(lines)

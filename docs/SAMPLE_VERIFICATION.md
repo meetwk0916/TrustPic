@@ -16,8 +16,8 @@ Generated samples:
 - `gb45438-xmp.png`: PNG bytes with a TC260 AIGC XMP packet using the `http://www.tc260.org.cn/ns/AIGC/1.0/` namespace.
 - `camera-exif.jpg`: JPEG with generated camera-like EXIF fields.
 - `metadata-stripped.jpg`: same generated scene re-saved without EXIF.
-- `edited-compressed.jpg`: compressed JPEG with local shape edits for ELA smoke review.
-- `ela-review-compressed.jpg`: high-frequency low-quality JPEG expected to trip the v0 ELA review threshold.
+- `edited-compressed.jpg`: compressed JPEG with local shape edits for heatmap smoke review.
+- `ela-review-compressed.jpg`: JPEG with a concentrated high-frequency local region expected to trip the v0 local-difference review signal.
 
 These are smoke samples, not forensic ground truth. A production C2PA sample from a real tool or device is still needed before v0 can claim production C2PA sample coverage.
 
@@ -73,7 +73,7 @@ Expected smoke outcomes:
 - `camera-exif.jpg` returns `success` and `signals.exif.detected: true`.
 - `metadata-stripped.jpg` returns `success` and `signals.exif.detected: false`.
 - `edited-compressed.jpg` returns `success` with an ELA heatmap data URL.
-- `ela-review-compressed.jpg` returns `review_recommended` and `signals.ela.status: "review"`.
+- `ela-review-compressed.jpg` returns `review_recommended`, `signals.ela.status: "review"`, and `signals.ela.details.local_anomaly_detected: true`.
 - `c2pa-attacks-C.jpg`, when downloaded, returns `supported_signal_detected`, `signals.c2pa.detected: true`, and `signals.c2pa.details.validation_state: "Valid"`.
 
 ## Web Smoke
@@ -89,7 +89,7 @@ Open `http://127.0.0.1:5173/`, upload the generated samples, and verify:
 
 - the selected image preview renders
 - file name, type, and size render under the preview
-- verdict, evidence summaries, details, recommendation, limitations, and ELA heatmap render without layout overlap
+- conclusion, confidence, evidence summaries, foldable details, boundary notes, and local-difference heatmap render without layout overlap
 - failed uploads show a controlled error message
 
 ## Still Missing Real Samples

@@ -87,12 +87,12 @@ def _build_verdict(signals: ReportSignals) -> tuple[str, str, str]:
     if signals.ela.detected:
         return (
             "review_recommended",
-            "ELA found compression irregularities that may deserve review.",
-            "Compare the heatmap with the original image and verify the image context from another source.",
+            "ELA found a concentrated local difference pattern that may deserve review.",
+            "Compare the local difference heatmap with the original image context.",
         )
 
     return (
         "no_supported_signal_found",
-        "No supported AI provenance signal or strong ELA irregularity was found.",
+        "No supported AI provenance signal or concentrated local difference pattern was found.",
         "Treat this as inconclusive, not as proof that the image is real.",
     )

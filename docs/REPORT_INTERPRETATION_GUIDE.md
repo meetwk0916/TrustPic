@@ -26,9 +26,9 @@ It is not a probability that the image is real, fake, AI-generated, or edited.
 
 Supported labels:
 
-- `强`: a strong supported signal exists, such as an AI-generation marker, or a valid source record without abnormal compression evidence.
+- `强`: a strong supported signal exists, such as an AI-generation marker, or a valid source record without local-difference evidence.
 - `较强`: a source record exists but needs attention, or the file has relatively rich photo/edit metadata without stronger signals.
-- `中等`: the main evidence is compression/edit irregularity, sparse metadata, or another moderate signal.
+- `中等`: the main evidence is a local-difference clue, sparse metadata, or another moderate signal.
 - `有限`: supported signals are absent or too weak to support more than a limited conclusion.
 
 Unsupported or failed analysis should be treated as an abnormal state, not downgraded into `有限`.
@@ -38,7 +38,7 @@ Unsupported or failed analysis should be treated as an abnormal state, not downg
 The evidence chain must use this order:
 
 1. `AI 生成标记`
-2. `压缩/编辑痕迹`
+2. `局部差异线索`
 3. `图片来源记录`
 4. `拍摄/编辑信息`
 
@@ -60,21 +60,21 @@ If absent:
 - User meaning: the supported marker scan found no recognized AI-generation marker.
 - Boundary: this does not prove the image is not AI-generated. Many platforms strip or never write this metadata. It also does not cancel out AI-related source evidence found in the source record.
 
-### 压缩/编辑痕迹
+### 局部差异线索
 
-This covers ELA compression-difference evidence.
+This covers tile-level ELA local-difference evidence. Global compression, platform recompression, screenshots, and ordinary re-saving are common file-flow behavior and should not be elevated into a user-facing warning by themselves.
 
 If detected:
 
 - Status: `需留意`
-- User meaning: the file shows notable compression differences under the current ELA heuristic.
-- Boundary: compression differences can come from saving, screenshots, platform forwarding, or edits. ELA alone cannot prove tampering, P图, or AI generation.
+- User meaning: a small set of image regions stands out from the overall recompression pattern.
+- Boundary: this is only a local-difference clue. It can be caused by texture, overlays, editing workflow, or recompression. It cannot alone prove tampering, P图, or AI generation.
 
 If absent:
 
 - Status: `未发现`
-- User meaning: ELA is below the current review threshold.
-- Boundary: this does not prove the image was never processed.
+- User meaning: TrustPic did not find a concentrated local ELA anomaly.
+- Boundary: this does not prove the image was never edited. It also does not treat ordinary compression as important evidence.
 
 ### 图片来源记录
 
@@ -138,8 +138,8 @@ TrustPic v0 chooses the conclusion by evidence priority, not by a generic verdic
 2. If no GB 45438/TC260 marker is detected, but the source record is AI-related:
    `图片来源记录显示这张图与 AI 生成来源有关。`
 
-3. If no AI marker or AI-related source record is detected, but ELA is detected:
-   `发现明显的压缩或编辑痕迹。`
+3. If no AI marker or AI-related source record is detected, but local ELA difference is detected:
+   `发现局部区域存在压缩差异集中线索。`
 
 4. If no AI marker, AI-related source record, or ELA finding is detected, but a valid source record is detected:
    `发现这张图带有可验证的来源记录。`

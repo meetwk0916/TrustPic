@@ -14,6 +14,7 @@ The current implementation includes:
 - Evidence-first report contract with verdict, summary, signals, human-readable `interpretation`, limitations, recommendation, and `assets.ela_heatmap_data_url`.
 - React + Vite Web UI for selecting an image, previewing it, showing file metadata, calling the backend, and displaying a user-readable conclusion, confidence label, ordered evidence chain, foldable evidence explanations, boundary notes, and ELA heatmap.
 - AI-related C2PA source records, including OpenAI and explicit Google AI product records such as Gemini, NotebookLM, Imagen, SynthID, and Nano Banana, are interpreted as AI-related source evidence even when GB 45438/TC260 markers are absent.
+- ELA is now a tile-level local-difference signal. Ordinary global compression is ignored as a primary user-facing finding; `review` means a small set of local tiles stands out from the overall recompression pattern.
 - Local sample-image generator for repeatable smoke checks.
 - Strict generated/public sample verifier, ELA calibration script, real-sample directory audit script, public dataset audit script, multi-source dataset suite runner, and auto validation window.
 - CodeGraph index initialized for the project.
@@ -296,6 +297,39 @@ cd backend
 ```
 
 Result: `42 passed`.
+
+```bash
+cd web
+npm run build
+```
+
+Result: TypeScript build and Vite production build passed.
+
+Validated again after ELA was narrowed from global compression review to tile-level local-difference review:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `43 passed`.
+
+```bash
+cd backend
+.venv/bin/python scripts/verify_samples.py --output-dir /private/tmp/trustpic-samples-local-ela
+```
+
+Result: generated sample verification passed. Ordinary EXIF and metadata-stripped JPEG samples stayed `ela_status: low_signal`; `ela-review-compressed.jpg` returned `ela_status: review`.
+
+```bash
+cd backend
+.venv/bin/python scripts/calibrate_ela.py --generate \
+  --sample-dir /private/tmp/trustpic-samples-local-ela-cal \
+  --json-output /private/tmp/trustpic-ela-calibration-local.json \
+  --markdown-output /private/tmp/trustpic-ela-calibration-local.md
+```
+
+Result: calibration export passed with tile-level local anomaly fields.
 
 ```bash
 cd web

@@ -89,3 +89,30 @@ def test_google_c2pa_without_ai_product_name_stays_attention_level() -> None:
     source_record = interpretation.evidence_chain[2]
     assert source_record.status_label == "需留意"
     assert source_record.summary == "发现 Google 图片来源记录，但没有看到明确的 AI 产品名。"
+
+
+def test_ela_uses_local_difference_language_not_global_compression_warning() -> None:
+    signals = ReportSignals(
+        gb45438=_signal(details={"matched_terms": []}),
+        ela=_signal(
+            status="review",
+            detected=True,
+            details={
+                "mean_error": 8.4,
+                "local_anomaly_detected": True,
+                "local_anomaly_count": 3,
+                "local_anomaly_ratio": 0.08,
+            },
+        ),
+        c2pa=_signal(),
+        exif=_signal(),
+    )
+
+    interpretation = build_interpretation(signals)
+
+    assert interpretation.conclusion == "发现局部区域存在压缩差异集中线索。"
+    ela_evidence = interpretation.evidence_chain[1]
+    assert ela_evidence.title == "局部差异线索"
+    assert ela_evidence.status_label == "需留意"
+    assert "3 个局部异常块" in ela_evidence.means
+    assert "不能单独证明图片被 P 过" in ela_evidence.does_not_mean
