@@ -8,6 +8,7 @@ from app.services.c2pa_signal import inspect_c2pa
 from app.services.ela import inspect_ela
 from app.services.exif import inspect_exif
 from app.services.gb45438 import inspect_gb45438
+from app.services.interpretation import build_interpretation
 
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 MAX_PIXELS = 40_000_000
@@ -46,6 +47,7 @@ async def analyze_upload(file: UploadFile) -> AnalyzeResponse:
 
     signals = ReportSignals(c2pa=c2pa, gb45438=gb45438, exif=exif, ela=ela)
     verdict, summary, recommendation = _build_verdict(signals)
+    interpretation = build_interpretation(signals)
 
     limitations = [
         "No supported signal found does not prove the image is authentic.",
@@ -58,6 +60,7 @@ async def analyze_upload(file: UploadFile) -> AnalyzeResponse:
         verdict=verdict,
         summary=summary,
         signals=signals,
+        interpretation=interpretation,
         limitations=limitations,
         recommendation=recommendation,
         assets=ReportAssets(ela_heatmap_data_url=heatmap_data_url),
@@ -93,4 +96,3 @@ def _build_verdict(signals: ReportSignals) -> tuple[str, str, str]:
         "No supported AI provenance signal or strong ELA irregularity was found.",
         "Treat this as inconclusive, not as proof that the image is real.",
     )
-

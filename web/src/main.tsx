@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import React, { ChangeEvent, FormEvent, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
@@ -16,6 +16,16 @@ type EvidenceSignal = {
   details: Record<string, unknown>;
 };
 
+type InterpretationEvidence = {
+  key: "gb45438" | "ela" | "c2pa" | "exif";
+  title: string;
+  status_label: "支持证据" | "需留意" | "未发现" | "无法分析";
+  summary: string;
+  means: string;
+  does_not_mean: string;
+  details: Record<string, unknown>;
+};
+
 type AnalyzeResponse = {
   status: "success";
   verdict: Verdict;
@@ -25,6 +35,12 @@ type AnalyzeResponse = {
     gb45438: EvidenceSignal;
     exif: EvidenceSignal;
     ela: EvidenceSignal;
+  };
+  interpretation: {
+    confidence_label: "强" | "较强" | "中等" | "有限";
+    conclusion: string;
+    evidence_chain: InterpretationEvidence[];
+    limits: string[];
   };
   limitations: string[];
   recommendation: string;
@@ -41,17 +57,6 @@ function App() {
   const [report, setReport] = useState<AnalyzeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const verdictLabel = useMemo(() => {
-    if (!report) return null;
-    const labels: Record<Verdict, string> = {
-      supported_signal_detected: "Supported Signal Detected",
-      review_recommended: "Review Recommended",
-      no_supported_signal_found: "No Supported Signal Found",
-      unsupported: "Unsupported",
-    };
-    return labels[report.verdict];
-  }, [report]);
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const selected = event.target.files?.[0] ?? null;
@@ -152,29 +157,30 @@ function App() {
           <div className="report-pane">
             {report ? (
               <>
-                <div className={`verdict verdict-${report.verdict}`}>
-                  <span>{verdictLabel}</span>
-                  <strong>{report.summary}</strong>
-                </div>
+                <section className="interpretation">
+                  <div className="confidence-card">
+                    <span>置信度</span>
+                    <strong>{report.interpretation.confidence_label}</strong>
+                  </div>
+                  <div className="conclusion-card">
+                    <h2>结论</h2>
+                    <p>{report.interpretation.conclusion}</p>
+                  </div>
+                </section>
 
-                <SignalList signals={report.signals} />
+                <EvidenceChain evidence={report.interpretation.evidence_chain} />
 
                 {report.assets.ela_heatmap_data_url && (
                   <section className="heatmap">
-                    <h2>ELA Heatmap</h2>
+                    <h2>压缩差异图</h2>
                     <img src={report.assets.ela_heatmap_data_url} alt="ELA heatmap" />
                   </section>
                 )}
 
                 <section className="text-section">
-                  <h2>Recommendation</h2>
-                  <p>{report.recommendation}</p>
-                </section>
-
-                <section className="text-section">
-                  <h2>Limitations</h2>
+                  <h2>边界说明</h2>
                   <ul>
-                    {report.limitations.map((item) => (
+                    {report.interpretation.limits.map((item) => (
                       <li key={item}>{item}</li>
                     ))}
                   </ul>
@@ -190,38 +196,56 @@ function App() {
   );
 }
 
-function SignalList({ signals }: { signals: AnalyzeResponse["signals"] }) {
-  const entries: Array<[string, EvidenceSignal]> = [
-    ["C2PA", signals.c2pa],
-    ["GB 45438", signals.gb45438],
-    ["EXIF", signals.exif],
-    ["ELA", signals.ela],
-  ];
-
+function EvidenceChain({ evidence }: { evidence: InterpretationEvidence[] }) {
   return (
-    <section className="signals">
-      <h2>Evidence</h2>
-      <div className="signal-list">
-        {entries.map(([label, signal]) => (
-          <article className="signal-row" key={label}>
-            <div>
-              <h3>{label}</h3>
-              <p>{signal.summary}</p>
-              {Object.keys(signal.details).length > 0 && (
-                <details className="signal-details">
-                  <summary>Details</summary>
-                  <pre>{JSON.stringify(signal.details, null, 2)}</pre>
+    <section className="evidence-chain">
+      <h2>证据链</h2>
+      <div className="evidence-list">
+        {evidence.map((item) => (
+          <article className="evidence-card" key={item.key}>
+            <header>
+              <div>
+                <h3>{item.title}</h3>
+                <p>{item.summary}</p>
+              </div>
+              <span className={`evidence-status ${statusClass(item.status_label)}`}>
+                {item.status_label}
+              </span>
+            </header>
+            <details className="evidence-details">
+              <summary>展开解释</summary>
+              <div className="explain-grid">
+                <div>
+                  <h4>能说明什么</h4>
+                  <p>{item.means}</p>
+                </div>
+                <div>
+                  <h4>不能说明什么</h4>
+                  <p>{item.does_not_mean}</p>
+                </div>
+              </div>
+              {Object.keys(item.details).length > 0 && (
+                <details className="technical-details">
+                  <summary>技术细节</summary>
+                  <pre>{JSON.stringify(item.details, null, 2)}</pre>
                 </details>
               )}
-            </div>
-            <span className={signal.detected ? "badge badge-detected" : "badge"}>
-              {signal.status}
-            </span>
+            </details>
           </article>
         ))}
       </div>
     </section>
   );
+}
+
+function statusClass(status: InterpretationEvidence["status_label"]) {
+  const classes: Record<InterpretationEvidence["status_label"], string> = {
+    支持证据: "status-support",
+    需留意: "status-warning",
+    未发现: "status-neutral",
+    无法分析: "status-unavailable",
+  };
+  return classes[status];
 }
 
 function formatBytes(bytes: number) {
