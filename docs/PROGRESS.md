@@ -13,6 +13,7 @@ The current implementation includes:
 - Evidence modules for C2PA read attempts, GB 45438/AIGC byte-marker scan, EXIF summary, and ELA heatmap generation.
 - Evidence-first report contract with verdict, summary, signals, human-readable `interpretation`, limitations, recommendation, and `assets.ela_heatmap_data_url`.
 - React + Vite Web UI for selecting an image, previewing it, showing file metadata, calling the backend, and displaying a user-readable conclusion, confidence label, ordered evidence chain, foldable evidence explanations, boundary notes, and ELA heatmap.
+- AI-related C2PA source records, including OpenAI signer records, are interpreted as AI-related source evidence even when GB 45438/TC260 markers are absent.
 - Local sample-image generator for repeatable smoke checks.
 - Strict generated/public sample verifier, ELA calibration script, real-sample directory audit script, public dataset audit script, multi-source dataset suite runner, and auto validation window.
 - CodeGraph index initialized for the project.
@@ -263,6 +264,22 @@ cd backend
 ```
 
 Result: `39 passed`.
+
+```bash
+cd web
+npm run build
+```
+
+Result: TypeScript build and Vite production build passed.
+
+Validated again after AI-related C2PA source records were promoted into the human-readable interpretation:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `40 passed`.
 
 ```bash
 cd web

@@ -6,7 +6,7 @@ def build_interpretation(signals: ReportSignals) -> ReportInterpretation:
         confidence_label=confidence_label(signals),
         conclusion=human_conclusion(signals),
         evidence_chain=[
-            ai_marker_evidence(signals.gb45438),
+            ai_marker_evidence(signals.gb45438, signals.c2pa),
             ela_evidence(signals.ela),
             source_record_evidence(signals.c2pa),
             photo_metadata_evidence(signals.exif),
@@ -22,6 +22,8 @@ def build_interpretation(signals: ReportSignals) -> ReportInterpretation:
 def human_conclusion(signals: ReportSignals) -> str:
     if signals.gb45438.detected:
         return "发现这张图带有 AI 生成相关标记。"
+    if ai_related_source_record(signals.c2pa):
+        return "图片来源记录显示这张图与 AI 生成来源有关。"
     if signals.ela.detected:
         return "发现明显的压缩或编辑痕迹。"
     if signals.c2pa.detected:
@@ -36,6 +38,10 @@ def human_conclusion(signals: ReportSignals) -> str:
 def confidence_label(signals: ReportSignals) -> str:
     if signals.gb45438.detected:
         return "强"
+    if ai_related_source_record(signals.c2pa) and c2pa_validation_state(signals.c2pa) == "Valid":
+        return "强"
+    if ai_related_source_record(signals.c2pa):
+        return "较强"
     if signals.c2pa.detected and c2pa_validation_state(signals.c2pa) == "Valid" and not signals.ela.detected:
         return "强"
     if signals.c2pa.detected:
@@ -49,7 +55,7 @@ def confidence_label(signals: ReportSignals) -> str:
     return "有限"
 
 
-def ai_marker_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
+def ai_marker_evidence(signal: EvidenceSignal, c2pa_signal: EvidenceSignal | None = None) -> InterpretationEvidence:
     if not signal.checked:
         return InterpretationEvidence(
             key="gb45438",
@@ -70,6 +76,16 @@ def ai_marker_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
             summary="发现 AI 生成相关标记。",
             means=f"文件里包含 TrustPic v0 可识别的 AI 生成标记：{field_names}。",
             does_not_mean="这不说明图片的每个局部都由 AI 生成，也不说明标记一定来自权威平台。",
+            details=signal.details,
+        )
+    if c2pa_signal is not None and ai_related_source_record(c2pa_signal):
+        return InterpretationEvidence(
+            key="gb45438",
+            title="AI 生成标记",
+            status_label="未发现",
+            summary="没有发现 GB 45438/TC260 这类 AI 生成标记；但来源记录里有 AI 相关证据。",
+            means="文件里没有检测到当前支持的国内 AI 生成标记字段。",
+            does_not_mean="这不抵消图片来源记录里的 AI 相关证据；OpenAI 等签发方记录属于来源记录，不属于 GB 45438/TC260 标记。",
             details=signal.details,
         )
     return InterpretationEvidence(
@@ -118,6 +134,8 @@ def ela_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
 
 def source_record_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
     validation_state = c2pa_validation_state(signal)
+    ai_source = ai_related_source_record(signal)
+    source_name = source_record_name(signal)
     if not signal.checked:
         return InterpretationEvidence(
             key="c2pa",
@@ -126,6 +144,27 @@ def source_record_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
             summary="这次没有完成图片来源记录检查。",
             means="TrustPic 没有得到这一项证据。",
             does_not_mean="这不代表图片没有来源记录。",
+            details=signal.details,
+        )
+    if signal.detected and ai_source:
+        source_text = f"，来源线索包括 {source_name}" if source_name else ""
+        if validation_state == "Valid":
+            return InterpretationEvidence(
+                key="c2pa",
+                title="图片来源记录",
+                status_label="支持证据",
+                summary="发现可验证的 AI 相关图片来源记录。",
+                means=f"文件里包含可读取的来源记录，验证状态为 Valid{source_text}。",
+                does_not_mean="这不说明图片的每个局部都由 AI 生成，也不保证图片内容一定真实或上下文完整。",
+                details=signal.details,
+            )
+        return InterpretationEvidence(
+            key="c2pa",
+            title="图片来源记录",
+            status_label="需留意",
+            summary="发现 AI 相关图片来源记录，但验证状态不完整或异常。",
+            means=f"文件里有 AI 相关来源线索，验证状态为 {validation_state or '未知'}{source_text}。",
+            does_not_mean="这不代表来源记录一定可信，也不等于图片内容一定造假。",
             details=signal.details,
         )
     if signal.detected and validation_state == "Valid":
@@ -199,6 +238,32 @@ def c2pa_validation_state(signal: EvidenceSignal) -> str | None:
         return None
     value = signal.details.get("validation_state")
     return str(value) if value is not None else None
+
+
+def ai_related_source_record(signal: EvidenceSignal) -> bool:
+    if not signal.detected or not isinstance(signal.details, dict):
+        return False
+    if signal.details.get("ai_related") is True:
+        return True
+    searchable_values = [
+        signal.details.get("signature_issuer"),
+        signal.details.get("signature_common_name"),
+        signal.details.get("claim_generator"),
+        signal.details.get("title"),
+    ]
+    searchable = " ".join(str(value).lower() for value in searchable_values if value)
+    ai_terms = ("openai", "dall-e", "dalle", "aigc", "ai-generated", "generated by ai", "midjourney", "imagen")
+    return any(term in searchable for term in ai_terms)
+
+
+def source_record_name(signal: EvidenceSignal) -> str | None:
+    if not isinstance(signal.details, dict):
+        return None
+    for key in ("signature_issuer", "signature_common_name", "claim_generator"):
+        value = signal.details.get(key)
+        if value:
+            return str(value)
+    return None
 
 
 def exif_field_count(signal: EvidenceSignal) -> int:
