@@ -48,6 +48,11 @@ def main() -> None:
         help="Fail with exit code 1 unless at least this many sources complete.",
     )
     parser.add_argument(
+        "--require-total-samples",
+        type=int,
+        help="Fail with exit code 1 unless at least this many samples are audited.",
+    )
+    parser.add_argument(
         "--min-alignment-rate",
         type=float,
         help="Fail with exit code 1 unless configured label expectations meet this combined alignment rate.",
@@ -61,6 +66,7 @@ def main() -> None:
             min_confidence_level=args.min_confidence_level,
             min_confidence_score=args.min_confidence_score,
             require_completed_sources=args.require_completed_sources,
+            require_total_samples=args.require_total_samples,
             min_alignment_rate=args.min_alignment_rate,
         )
 
@@ -81,6 +87,7 @@ def cli_gate_requested(args: argparse.Namespace) -> bool:
             args.min_confidence_level,
             args.min_confidence_score,
             args.require_completed_sources,
+            args.require_total_samples,
             args.min_alignment_rate,
         )
     )
@@ -127,6 +134,7 @@ def run_suite(config: dict) -> dict:
         min_confidence_level=gate_config.get("min_confidence_level"),
         min_confidence_score=gate_config.get("min_confidence_score"),
         require_completed_sources=gate_config.get("require_completed_sources"),
+        require_total_samples=gate_config.get("require_total_samples"),
         min_alignment_rate=gate_config.get("min_alignment_rate"),
     )
     return payload
@@ -138,6 +146,7 @@ def evaluate_gate(
     min_confidence_level: str | None = None,
     min_confidence_score: float | None = None,
     require_completed_sources: int | None = None,
+    require_total_samples: int | None = None,
     min_alignment_rate: float | None = None,
 ) -> dict:
     failures = []
@@ -155,6 +164,10 @@ def evaluate_gate(
         failures.append(
             f"Completed source count {payload.get('completed_source_count', 0)} is below required count {require_completed_sources}."
         )
+    if require_total_samples is not None and payload.get("total_samples", 0) < int(require_total_samples):
+        failures.append(
+            f"Total sample count {payload.get('total_samples', 0)} is below required count {require_total_samples}."
+        )
     if min_alignment_rate is not None:
         alignment = payload.get("combined_expectation_summary", {}).get("alignment_rate")
         if alignment is None:
@@ -171,6 +184,7 @@ def evaluate_gate(
             "min_confidence_level": min_confidence_level,
             "min_confidence_score": min_confidence_score,
             "require_completed_sources": require_completed_sources,
+            "require_total_samples": require_total_samples,
             "min_alignment_rate": min_alignment_rate,
         },
     }

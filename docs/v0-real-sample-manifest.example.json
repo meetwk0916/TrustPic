@@ -1,0 +1,47 @@
+{
+  "suite": "trustpic-v0-real-sample-suite",
+  "samples": [
+    {
+      "slot_id": "openai_c2pa_original",
+      "label": "OpenAI/ChatGPT generated image with original C2PA/source record",
+      "path": "/private/tmp/trustpic-real-v0/openai-original.png",
+      "required": true
+    },
+    {
+      "slot_id": "google_ai_original",
+      "label": "NotebookLM/Gemini/Imagen original export when available",
+      "path": "/private/tmp/trustpic-real-v0/google-ai-original.png",
+      "required": true
+    },
+    {
+      "slot_id": "google_ai_reencoded",
+      "label": "NotebookLM/Gemini/Imagen screenshot or re-encoded copy",
+      "path": "/private/tmp/trustpic-real-v0/google-ai-reencoded.png",
+      "required": true
+    },
+    {
+      "slot_id": "domestic_gb45438_original",
+      "label": "Domestic AIGC original export with GB45438/TC260 metadata when available",
+      "path": "/private/tmp/trustpic-real-v0/domestic-gb45438-original.png",
+      "required": true
+    },
+    {
+      "slot_id": "camera_exif_original",
+      "label": "Normal camera or phone photo with EXIF",
+      "path": "/private/tmp/trustpic-real-v0/camera-exif-original.jpg",
+      "required": true
+    },
+    {
+      "slot_id": "platform_stripped",
+      "label": "Common platform-forwarded or downloaded image with stripped metadata",
+      "path": "/private/tmp/trustpic-real-v0/platform-stripped.jpg",
+      "required": true
+    },
+    {
+      "slot_id": "known_local_edit",
+      "label": "Known local edit or composite used to calibrate local-difference ELA",
+      "path": "/private/tmp/trustpic-real-v0/known-local-edit.jpg",
+      "required": true
+    }
+  ]
+}

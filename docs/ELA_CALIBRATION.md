@@ -33,13 +33,31 @@ The generated sample set currently produces:
 | simple edited/compressed JPEG | `low_signal` |
 | concentrated local high-frequency JPEG | `review` |
 
+The v0 release coverage suite produced this snapshot:
+
+```bash
+cd backend
+.venv/bin/python scripts/audit_dataset_suite.py ../docs/public-dataset-v0-release.example.json \
+  --json-output /private/tmp/trustpic-v0-release-suite.json \
+  --markdown-output /private/tmp/trustpic-v0-release-suite.md
+```
+
+Result: 54 samples, 5 completed sources, gate `passed`, combined confidence `high` (`0.9`), expectation alignment `1.0`, and ELA review rate `0.2593`.
+
+Important calibration observations:
+
+- Public EXIF JPEG samples had high global `mean_error` values (`37.53` and `50.11`) but stayed `low_signal` because no concentrated local anomaly was detected.
+- The generated metadata-stripped JPEG stayed `low_signal`.
+- The generated concentrated local-difference fixture returned `review`.
+- Public remote benchmark samples can trigger local-difference review, but those datasets are not forensic ground truth for editing. Treat them as distribution checks, not proof of tampering accuracy.
+
 ## Interpretation
 
 ELA highlights recompression differences. TrustPic v0 ignores global compression as a user-facing signal and only marks ELA as `review` when a small set of tiles stands out from the overall image. This can be useful as a local-difference clue, but it is sensitive to texture, format, save quality, and editing workflow. A local ELA signal does not prove AI generation, P图, or malicious tampering, and a low ELA signal does not prove authenticity.
 
 ## Remaining Calibration Work
 
-Before treating the threshold as product-grade, collect real samples and record:
+Before treating the threshold as product-grade, collect real product-flow samples and record:
 
 - original camera photos with varied texture and lighting
 - platform-compressed or platform-forwarded images

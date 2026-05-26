@@ -363,6 +363,28 @@ npm run build
 
 Result: TypeScript build and Vite production build passed.
 
+Validated after the v0 real-sample manifest auditor and 50+ release suite gate were added:
+
+```bash
+cd backend
+.venv/bin/python scripts/audit_v0_real_sample_manifest.py ../docs/v0-real-sample-manifest.example.json \
+  --allow-missing \
+  --json-output /private/tmp/trustpic-real-v0-dry-run.json \
+  --markdown-output /private/tmp/trustpic-real-v0-dry-run.md
+```
+
+Result: dry run succeeded and reported 7 missing required real sample slots.
+
+```bash
+cd backend
+.venv/bin/python scripts/prepare_first_phase_fixtures.py
+.venv/bin/python scripts/audit_dataset_suite.py ../docs/public-dataset-v0-release.example.json \
+  --json-output /private/tmp/trustpic-v0-release-suite.json \
+  --markdown-output /private/tmp/trustpic-v0-release-suite.md
+```
+
+Result: 5 completed sources, 0 skipped, 0 failed, 54 total samples, gate `passed`, combined confidence `high` (`0.9`), expectation alignment `1.0`.
+
 ```bash
 git diff --check
 ```
@@ -393,7 +415,7 @@ The v0 goal is not complete until the success criteria in `docs/V0_GOALS.md` are
 
 Highest-priority gaps:
 
-- Increase first-phase suite sample counts once runtime/network limits are acceptable; current confidence is suitable for smoke validation but still below the 50-image calibration floor.
+- Fill the 7 required real-sample manifest slots in `docs/V0_REAL_SAMPLE_SUITE.md`.
 - Replace the generated GB 45438/TC260 fixture with a real domestic source file when a metadata-preserving public sample becomes available.
 - Add real user-supplied or production-source sample records for a platform-stripped image and a known real edit/recompression flow.
 - Decide whether the upgraded GB 45438 scanner should remain a v0 TC260 XMP/marker scanner or move to a known implementation.
@@ -401,8 +423,9 @@ Highest-priority gaps:
 
 ## Next Recommended Step
 
-Start with backend confidence before expanding product surface:
+Start with real product-flow samples before expanding product surface:
 
-1. Increase `docs/public-dataset-first-phase.example.json` sample counts for the completed sources and re-run the gated suite.
-2. Add a real platform-stripped sample and a known real edit/recompression sample outside git.
-3. Re-run backend tests and frontend build.
+1. Copy `docs/v0-real-sample-manifest.example.json` to `/private/tmp/trustpic-real-v0/manifest.json`.
+2. Fill the required sample files outside git.
+3. Run `scripts/audit_v0_real_sample_manifest.py` without `--allow-missing`.
+4. Re-run backend tests, frontend build, and the v0 release suite.
