@@ -46,6 +46,8 @@ The evidence chain must use this order:
 
 This covers GB 45438/TC260/AIGC markers that TrustPic v0 can identify.
 
+This section does not cover every possible AI-related provenance record. For example, an OpenAI signer found in `图片来源记录` is AI-related source evidence, but it is not a GB 45438/TC260 marker.
+
 If detected:
 
 - Status: `支持证据`
@@ -56,7 +58,7 @@ If absent:
 
 - Status: `未发现`
 - User meaning: the supported marker scan found no recognized AI-generation marker.
-- Boundary: this does not prove the image is not AI-generated. Many platforms strip or never write this metadata.
+- Boundary: this does not prove the image is not AI-generated. Many platforms strip or never write this metadata. It also does not cancel out AI-related source evidence found in the source record.
 
 ### 压缩/编辑痕迹
 
@@ -83,6 +85,8 @@ If detected and valid:
 - Status: `支持证据`
 - User meaning: the file contains a readable source record, and the signature validation state is valid.
 - Boundary: this does not guarantee the image content is true or shown in its original context.
+
+If the source record includes AI-related provenance, such as OpenAI, the user-facing summary should say that this is an AI-related source record.
 
 If detected but incomplete or abnormal:
 
@@ -126,19 +130,22 @@ TrustPic v0 chooses the conclusion by evidence priority, not by a generic verdic
 1. If an AI-generation marker is detected:
    `发现这张图带有 AI 生成相关标记。`
 
-2. If no AI marker is detected, but ELA is detected:
+2. If no GB 45438/TC260 marker is detected, but the source record is AI-related:
+   `图片来源记录显示这张图与 AI 生成来源有关。`
+
+3. If no AI marker or AI-related source record is detected, but ELA is detected:
    `发现明显的压缩或编辑痕迹。`
 
-3. If no AI marker or ELA finding is detected, but a valid source record is detected:
+4. If no AI marker, AI-related source record, or ELA finding is detected, but a valid source record is detected:
    `发现这张图带有可验证的来源记录。`
 
-4. If a source record is detected but validation is incomplete or abnormal:
+5. If a source record is detected but validation is incomplete or abnormal:
    `发现图片来源记录，但验证状态需要留意。`
 
-5. If only photo/edit metadata is detected:
+6. If only photo/edit metadata is detected:
    `发现这张图包含拍摄或编辑信息，但没有发现 AI 生成标记。`
 
-6. If no supported evidence is detected:
+7. If no supported evidence is detected:
    `没有发现这张图是 AI 生成或被明显处理的证据。`
 
 ## UI Requirements
