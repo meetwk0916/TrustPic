@@ -75,6 +75,7 @@ function App() {
 
   const coreEvidence = report?.interpretation.evidence_chain.filter((item) => item.key !== "ela") ?? [];
   const localDifference = report?.interpretation.evidence_chain.find((item) => item.key === "ela") ?? null;
+  const aiAlert = report ? aiStrongAlert(report.interpretation.evidence_chain) : null;
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const selected = event.target.files?.[0] ?? null;
@@ -196,16 +197,9 @@ function App() {
                   </div>
                 </section>
 
-                <EvidenceChain evidence={coreEvidence} />
+                {aiAlert && <AiAlert evidence={aiAlert} />}
 
-                <section className="text-section">
-                  <h2>边界说明</h2>
-                  <ul>
-                    {report.interpretation.limits.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </section>
+                <EvidenceChain evidence={coreEvidence} />
 
                 {localDifference && (
                   <LocalDifferenceSection
@@ -213,6 +207,8 @@ function App() {
                     heatmapUrl={report.assets.ela_heatmap_data_url}
                   />
                 )}
+
+                <ReportNotes limits={report.interpretation.limits} />
               </>
             ) : (
               <div className="empty-state">Report will appear here</div>
@@ -221,6 +217,18 @@ function App() {
         </section>
       </section>
     </main>
+  );
+}
+
+function AiAlert({ evidence }: { evidence: InterpretationEvidence }) {
+  return (
+    <section className="ai-alert">
+      <div>
+        <span>AI 相关证据</span>
+        <strong>{evidence.summary}</strong>
+      </div>
+      <p>{evidence.means}</p>
+    </section>
   );
 }
 
@@ -293,6 +301,19 @@ function EvidenceArticle({ item }: { item: InterpretationEvidence }) {
   );
 }
 
+function ReportNotes({ limits }: { limits: string[] }) {
+  return (
+    <section className="report-notes">
+      <h2>报告怎么读</h2>
+      <ul>
+        {limits.map((item) => (
+          <li key={item}>{rewriteLimit(item)}</li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function statusClass(status: InterpretationEvidence["status_label"]) {
   const classes: Record<InterpretationEvidence["status_label"], string> = {
     支持证据: "status-support",
@@ -301,6 +322,42 @@ function statusClass(status: InterpretationEvidence["status_label"]) {
     无法分析: "status-unavailable",
   };
   return classes[status];
+}
+
+function aiStrongAlert(evidence: InterpretationEvidence[]) {
+  const aiMarker = evidence.find((item) => item.key === "gb45438" && item.status_label === "支持证据");
+  if (aiMarker) return aiMarker;
+
+  const sourceRecord = evidence.find((item) => item.key === "c2pa");
+  if (!sourceRecord) return null;
+
+  const details = sourceRecord.details;
+  if (details.ai_related === true) return sourceRecord;
+  const text = [
+    sourceRecord.summary,
+    sourceRecord.means,
+    details.signature_issuer,
+    details.signature_common_name,
+    details.claim_generator,
+    details.title,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  const terms = ["openai", "dall-e", "dalle", "gemini", "notebooklm", "imagen", "synthid", "nano banana"];
+  return terms.some((term) => text.includes(term)) ? sourceRecord : null;
+}
+
+function rewriteLimit(limit: string) {
+  const copy: Record<string, string> = {
+    "没有发现证据，不等于图片一定不是 AI 生成。": "没有发现可读证据，不等于图片一定不是 AI 生成。",
+    "压缩或编辑痕迹不等于图片一定被篡改或 P 图。":
+      "局部差异只是线索，不能单独证明图片被篡改、P 图或 AI 生成。",
+    "来源记录能说明文件里带有可验证信息，但不等于图片内容一定真实。":
+      "来源记录能说明文件里带有可验证信息，但不等于图片内容一定真实或上下文完整。",
+  };
+  return copy[limit] ?? limit;
 }
 
 function formatBytes(bytes: number) {
