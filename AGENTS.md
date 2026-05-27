@@ -24,9 +24,9 @@ CodeGraph is initialized in this repository. Run `codegraph sync` after code edi
 
 ## Project State
 
-TrustPic is an evidence-first single-image report tool. v0 is not a universal AI detector and must not claim that an image is real, fake, AI-generated, or authentic based only on absent signals.
+TrustPic is an evidence-first single-image report tool. v0 is not a universal AI detector and must not claim that an image is real, fake, AI-generated, edited, or authentic based only on absent signals.
 
-The durable report contract lives in `backend/app/models.py` and is consumed directly by the React/Vite frontend in `web/src/main.tsx`.
+The durable report contract lives in `backend/app/models.py` and is consumed directly by the React/Vite frontend in `web/src/main.tsx`. `interpretation` is the user-facing contract; `verdict`, `summary`, `limitations`, and `recommendation` remain compatibility fields.
 
 ## Local Runbook
 
@@ -59,6 +59,10 @@ cd backend
 .venv/bin/python -m pytest
 .venv/bin/python scripts/verify_samples.py --download-public --output-dir /private/tmp/trustpic-samples
 .venv/bin/python scripts/calibrate_ela.py --generate --sample-dir /private/tmp/trustpic-samples
+.venv/bin/python scripts/prepare_first_phase_fixtures.py
+.venv/bin/python scripts/audit_dataset_suite.py ../docs/public-dataset-v0-release.example.json \
+  --json-output /private/tmp/trustpic-v0-release-suite.json \
+  --markdown-output /private/tmp/trustpic-v0-release-suite.md
 ```
 
 ```bash
@@ -70,9 +74,9 @@ For user-supplied real samples, keep images outside git:
 
 ```bash
 cd backend
-.venv/bin/python scripts/audit_sample_directory.py /private/tmp/trustpic-real-samples \
-  --json-output /private/tmp/trustpic-real-sample-audit.json \
-  --markdown-output /private/tmp/trustpic-real-sample-audit.md
+.venv/bin/python scripts/audit_v0_real_sample_manifest.py /private/tmp/trustpic-real-v0/manifest.json \
+  --json-output /private/tmp/trustpic-real-v0/audit.json \
+  --markdown-output /private/tmp/trustpic-real-v0/audit.md
 ```
 
 ## Implementation Guardrails
@@ -82,14 +86,18 @@ cd backend
 - Keep closed or quota-dependent detector APIs deferred unless the user explicitly changes scope.
 - C2PA presence is a supported provenance signal; AI-related wording is only `details.ai_related`.
 - GB 45438 v0 scanning is conservative: TC260 AIGC XMP namespace/field extraction plus byte markers.
-- ELA is a review signal only. Threshold changes need calibration evidence and doc updates.
+- C2PA source records for OpenAI/DALL-E and explicit Google AI product names such as Gemini, NotebookLM, Imagen, SynthID, and Nano Banana are treated as AI-related source evidence.
+- ELA is a tile-level local-difference signal only. Ordinary compression is not a primary warning, and local differences do not prove tampering, P图, or AI generation. Threshold changes need calibration evidence and doc updates.
 - Keep Web and future Mini Program compatibility through the backend response schema.
 
 ## Key Docs
 
 - `docs/PROGRESS.md`: current status and remaining work.
+- `docs/V0_RELEASE_CHECKLIST.md`: release gate status and v0 blockers.
+- `docs/V0_REAL_SAMPLE_SUITE.md`: real product-flow sample slots and audit command.
 - `docs/SAMPLE_VERIFICATION.md`: generated/public sample verification.
 - `docs/ELA_CALIBRATION.md`: ELA heuristic and calibration workflow.
 - `docs/REAL_SAMPLE_INTAKE.md`: real sample audit workflow.
+- `docs/REPORT_INTERPRETATION_GUIDE.md`: user-facing conclusion, confidence, and evidence wording.
 - `docs/V0_GOALS.md`: product scope and non-negotiables.
 - `docs/TECH_STACK.md`: architecture and detection notes.
