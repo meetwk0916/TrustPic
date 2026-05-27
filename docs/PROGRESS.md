@@ -14,7 +14,7 @@ The current implementation includes:
 - Evidence-first report contract with verdict, summary, signals, human-readable `interpretation`, limitations, recommendation, and `assets.ela_heatmap_data_url`.
 - React + Vite Web UI for selecting an image, previewing it, showing file metadata, calling the backend, and displaying a user-readable conclusion, confidence label, ordered evidence chain, foldable evidence explanations, boundary notes, and ELA heatmap.
 - AI-related C2PA source records, including OpenAI and explicit Google AI product records such as Gemini, NotebookLM, Imagen, SynthID, and Nano Banana, are interpreted as AI-related source evidence even when GB 45438/TC260 markers are absent.
-- `图片来源记录` now also carries file-originality reading in details (`originality_label` and `originality_reasons`) without adding a separate top-level report module.
+- `图片来源记录` now also carries file-originality reading in its visible summary and details (`originality_label` and `originality_reasons`) without adding a separate top-level report module.
 - ELA is now a tile-level local-difference signal. Ordinary global compression is ignored as a primary user-facing finding; `review` means a small set of local tiles stands out from the overall recompression pattern.
 - Local sample-image generator for repeatable smoke checks.
 - Strict generated/public sample verifier, ELA calibration script, real-sample directory audit script, public dataset audit script, multi-source dataset suite runner, and auto validation window.

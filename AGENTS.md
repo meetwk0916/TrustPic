@@ -87,6 +87,7 @@ cd backend
 - C2PA presence is a supported provenance signal; AI-related wording is only `details.ai_related`.
 - GB 45438 v0 scanning is conservative: TC260 AIGC XMP namespace/field extraction plus byte markers.
 - C2PA source records for OpenAI/DALL-E and explicit Google AI product names such as Gemini, NotebookLM, Imagen, SynthID, and Nano Banana are treated as AI-related source evidence.
+- File-originality reading is carried inside the `图片来源记录` evidence item via summary text and `details.originality_label` / `details.originality_reasons`; do not add a separate top-level module unless dedicated screenshot, platform re-encode, or screen-photo detection is implemented.
 - ELA is a tile-level local-difference signal only. Ordinary compression is not a primary warning, and local differences do not prove tampering, P图, or AI generation. Threshold changes need calibration evidence and doc updates.
 - Keep Web and future Mini Program compatibility through the backend response schema.
 

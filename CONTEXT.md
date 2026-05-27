@@ -12,6 +12,10 @@ _Avoid_: AI detector result, authenticity proof, real/fake judgment
 A signal TrustPic v0 knows how to inspect and describe, currently provenance metadata, AI-related source records, EXIF metadata, GB 45438/TC260 AIGC markers, and tile-level ELA local-difference clues. A missing supported signal is evidence of absence only for that signal, not proof of authenticity.
 _Avoid_: truth signal, proof, probability
 
+**File Originality Reading**:
+A reading inside `图片来源记录` that explains whether the current file still carries source evidence useful for provenance interpretation. Current labels are `原始性较强`, `原始性有限`, and `无法判断`; `疑似二次采集` is reserved until screenshot, platform re-encode, or screen-photo evidence exists. This is not a separate top-level module in v0.
+_Avoid_: original-file proof, screenshot detector, authenticity judgment
+
 **Full-Scenario Full-Chain Coverage**:
 Coverage of the TrustPic v0 evidence matrix and validation flow: C2PA, AI-related source records, GB 45438/TC260, EXIF, tile-level local-difference ELA, metadata-stripped files, remote dataset extraction, label normalization, confidence gating, and report generation. It does not mean connecting every available AI-vs-real benchmark.
 _Avoid_: all AI detector benchmarks, universal fake-image coverage
@@ -61,3 +65,7 @@ Domain expert: "Not in the first phase. The minimum coverage set is enough until
 Dev: "If a sample has no C2PA or EXIF, can the report say it is fake or real?"
 
 Domain expert: "No. The evidence report can say no supported readable evidence was found, then explain how to read that boundary. It should not recommend a workflow or imply authenticity."
+
+Dev: "Should file originality be its own warning card?"
+
+Domain expert: "Not in v0. Keep the title as `图片来源记录` and include originality in that card's summary and details, so it explains provenance strength without becoming a separate warning."
