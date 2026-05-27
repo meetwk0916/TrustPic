@@ -267,12 +267,20 @@ function LocalDifferenceSection({
 }
 
 function EvidenceArticle({ item }: { item: InterpretationEvidence }) {
+  const originality = originalityLabel(item);
+
   return (
     <article className={`evidence-card evidence-${item.key}`}>
       <header>
         <div>
           <h3>{item.title}</h3>
           <p>{item.summary}</p>
+          {originality && (
+            <div className="originality-note">
+              <span>文件原始性</span>
+              <strong>{originality}</strong>
+            </div>
+          )}
         </div>
         <span className={`evidence-status ${statusClass(item.status_label)} signal-${item.key}`}>
           {item.status_label}
@@ -347,6 +355,12 @@ function aiStrongAlert(evidence: InterpretationEvidence[]) {
 
   const terms = ["openai", "dall-e", "dalle", "gemini", "notebooklm", "imagen", "synthid", "nano banana"];
   return terms.some((term) => text.includes(term)) ? sourceRecord : null;
+}
+
+function originalityLabel(item: InterpretationEvidence) {
+  if (item.key !== "c2pa") return null;
+  const label = item.details.originality_label;
+  return typeof label === "string" ? label : null;
 }
 
 function formatBytes(bytes: number) {
