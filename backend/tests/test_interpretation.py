@@ -34,7 +34,7 @@ def test_openai_c2pa_source_record_becomes_ai_source_conclusion() -> None:
     source_record = interpretation.evidence_chain[2]
     assert source_record.title == "图片来源记录"
     assert source_record.status_label == "支持证据"
-    assert source_record.summary == "发现可验证的 AI 相关来源记录。"
+    assert source_record.summary == "发现可验证的 AI 相关来源记录。当前文件原始性较强。"
     assert "OpenAI" in source_record.means
     assert "当前文件原始性判断：原始性较强" in source_record.means
     assert source_record.details["originality_label"] == "原始性较强"
@@ -64,7 +64,7 @@ def test_notebooklm_google_c2pa_source_record_becomes_ai_source_conclusion() -> 
     assert interpretation.conclusion == "图片来源记录指向 AI 生成来源。"
     source_record = interpretation.evidence_chain[2]
     assert source_record.status_label == "支持证据"
-    assert source_record.summary == "发现可验证的 AI 相关来源记录。"
+    assert source_record.summary == "发现可验证的 AI 相关来源记录。当前文件原始性较强。"
     assert "Google Trust Services" in source_record.means
     assert source_record.details["originality_label"] == "原始性较强"
 
@@ -92,7 +92,7 @@ def test_google_c2pa_without_ai_product_name_stays_attention_level() -> None:
     assert interpretation.conclusion == "发现这张图带有可验证的来源记录。"
     source_record = interpretation.evidence_chain[2]
     assert source_record.status_label == "需留意"
-    assert source_record.summary == "发现 Google 图片来源记录，但没有看到明确的 AI 产品名。"
+    assert source_record.summary == "发现 Google 图片来源记录，但没有看到明确的 AI 产品名。当前文件原始性较强。"
     assert source_record.title == "图片来源记录"
     assert source_record.details["originality_label"] == "原始性较强"
 
@@ -137,7 +137,7 @@ def test_absent_source_record_reports_limited_originality_without_claiming_safet
     source_record = interpretation.evidence_chain[2]
     assert source_record.title == "图片来源记录"
     assert source_record.status_label == "未发现"
-    assert source_record.summary == "没有发现可读取的图片来源记录。"
+    assert source_record.summary == "没有发现可读取的图片来源记录。当前文件原始性有限。"
     assert "当前文件原始性判断：原始性有限" in source_record.means
     assert "截图、转发、转码或二次保存" in source_record.means
     assert source_record.details["originality_label"] == "原始性有限"
