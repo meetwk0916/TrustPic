@@ -69,6 +69,8 @@ def test_analyze_png_returns_report_shape() -> None:
         "图片来源记录",
         "拍摄/编辑信息",
     ]
+    source_record = payload["interpretation"]["evidence_chain"][2]
+    assert source_record["details"]["originality_label"] == "原始性有限"
     assert payload["assets"]["ela_heatmap_data_url"].startswith("data:image/jpeg;base64,")
 
 
@@ -187,6 +189,9 @@ def test_exif_jpeg_reports_metadata_fields() -> None:
     exif_evidence = payload["interpretation"]["evidence_chain"][3]
     assert exif_evidence["title"] == "拍摄/编辑信息"
     assert exif_evidence["status_label"] == "支持证据"
+    source_record = payload["interpretation"]["evidence_chain"][2]
+    assert source_record["title"] == "图片来源记录"
+    assert source_record["details"]["originality_label"] in {"原始性有限", "原始性较强"}
 
 
 def test_high_error_jpeg_returns_review_recommended() -> None:

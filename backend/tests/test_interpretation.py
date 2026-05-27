@@ -36,6 +36,8 @@ def test_openai_c2pa_source_record_becomes_ai_source_conclusion() -> None:
     assert source_record.status_label == "支持证据"
     assert source_record.summary == "发现可验证的 AI 相关来源记录。"
     assert "OpenAI" in source_record.means
+    assert "当前文件原始性判断：原始性较强" in source_record.means
+    assert source_record.details["originality_label"] == "原始性较强"
 
 
 def test_notebooklm_google_c2pa_source_record_becomes_ai_source_conclusion() -> None:
@@ -64,6 +66,7 @@ def test_notebooklm_google_c2pa_source_record_becomes_ai_source_conclusion() -> 
     assert source_record.status_label == "支持证据"
     assert source_record.summary == "发现可验证的 AI 相关来源记录。"
     assert "Google Trust Services" in source_record.means
+    assert source_record.details["originality_label"] == "原始性较强"
 
 
 def test_google_c2pa_without_ai_product_name_stays_attention_level() -> None:
@@ -90,6 +93,8 @@ def test_google_c2pa_without_ai_product_name_stays_attention_level() -> None:
     source_record = interpretation.evidence_chain[2]
     assert source_record.status_label == "需留意"
     assert source_record.summary == "发现 Google 图片来源记录，但没有看到明确的 AI 产品名。"
+    assert source_record.title == "图片来源记录"
+    assert source_record.details["originality_label"] == "原始性较强"
 
 
 def test_ela_uses_local_difference_language_not_global_compression_warning() -> None:
@@ -117,3 +122,39 @@ def test_ela_uses_local_difference_language_not_global_compression_warning() -> 
     assert ela_evidence.status_label == "需留意"
     assert "3 个局部异常块" in ela_evidence.means
     assert "不能单独证明图片被篡改、P 图或由 AI 生成" in ela_evidence.does_not_mean
+
+
+def test_absent_source_record_reports_limited_originality_without_claiming_safety() -> None:
+    signals = ReportSignals(
+        gb45438=_signal(details={"matched_terms": []}),
+        ela=_signal(status="ok", details={"mean_error": 0.4}),
+        c2pa=_signal(),
+        exif=_signal(),
+    )
+
+    interpretation = build_interpretation(signals)
+
+    source_record = interpretation.evidence_chain[2]
+    assert source_record.title == "图片来源记录"
+    assert source_record.status_label == "未发现"
+    assert source_record.summary == "没有发现可读取的图片来源记录。"
+    assert "当前文件原始性判断：原始性有限" in source_record.means
+    assert "截图、转发、转码或二次保存" in source_record.means
+    assert source_record.details["originality_label"] == "原始性有限"
+
+
+def test_rich_exif_can_raise_originality_when_source_record_is_absent() -> None:
+    signals = ReportSignals(
+        gb45438=_signal(details={"matched_terms": []}),
+        ela=_signal(status="ok", details={"mean_error": 0.4}),
+        c2pa=_signal(),
+        exif=_signal(status="present", detected=True, details={"field_count": 6}),
+    )
+
+    interpretation = build_interpretation(signals)
+
+    source_record = interpretation.evidence_chain[2]
+    assert source_record.title == "图片来源记录"
+    assert source_record.status_label == "未发现"
+    assert "当前文件原始性判断：原始性较强" in source_record.means
+    assert source_record.details["originality_label"] == "原始性较强"
