@@ -17,6 +17,7 @@ The v0 goal is not to prove whether every image is real or AI-generated. The v0 
 - [v0 real sample suite](docs/V0_REAL_SAMPLE_SUITE.md)
 - [report interpretation guide](docs/REPORT_INTERPRETATION_GUIDE.md)
 - [overseas cloud deployment](docs/CLOUD_DEPLOYMENT.md)
+- [China Web + Mini Program architecture](docs/CHINA_WEB_MINIPROGRAM_ARCHITECTURE.md)
 - [public dataset suite example](docs/public-dataset-suite.example.json)
 - [first-phase minimum coverage suite](docs/public-dataset-first-phase.example.json)
 - [v0 release coverage suite](docs/public-dataset-v0-release.example.json)
