@@ -62,7 +62,7 @@ def test_analyze_png_returns_report_shape() -> None:
     }
     assert set(payload["signals"]) == {"c2pa", "gb45438", "exif", "ela"}
     assert payload["interpretation"]["confidence_label"] == "有限"
-    assert payload["interpretation"]["conclusion"] == "没有发现这张图是 AI 生成或被明显处理的证据。"
+    assert payload["interpretation"]["conclusion"] == "没有发现 TrustPic v0 能读取的 AI 来源、AI 标记或局部差异线索。"
     assert [item["title"] for item in payload["interpretation"]["evidence_chain"]] == [
         "AI 生成标记",
         "局部差异线索",
@@ -183,7 +183,7 @@ def test_exif_jpeg_reports_metadata_fields() -> None:
     assert exif["details"]["fields"]["Make"] == "TrustPic Camera"
     assert exif["details"]["fields"]["Model"] == "V0 EXIF Sample"
     assert payload["interpretation"]["confidence_label"] == "中等"
-    assert payload["interpretation"]["conclusion"] == "发现这张图包含拍摄或编辑信息，但没有发现 AI 生成标记。"
+    assert payload["interpretation"]["conclusion"] == "发现这张图包含拍摄或保存信息，但没有发现 AI 相关来源或标记。"
     exif_evidence = payload["interpretation"]["evidence_chain"][3]
     assert exif_evidence["title"] == "拍摄/编辑信息"
     assert exif_evidence["status_label"] == "支持证据"
@@ -203,7 +203,7 @@ def test_high_error_jpeg_returns_review_recommended() -> None:
     assert payload["signals"]["ela"]["details"]["local_anomaly_detected"] is True
     assert payload["signals"]["ela"]["details"]["local_anomaly_count"] >= 2
     assert payload["interpretation"]["confidence_label"] == "中等"
-    assert payload["interpretation"]["conclusion"] == "发现局部区域存在压缩差异集中线索。"
+    assert payload["interpretation"]["conclusion"] == "发现局部区域存在差异集中线索。"
     ela_evidence = payload["interpretation"]["evidence_chain"][1]
     assert ela_evidence["title"] == "局部差异线索"
     assert ela_evidence["status_label"] == "需留意"

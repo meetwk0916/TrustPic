@@ -307,7 +307,7 @@ function ReportNotes({ limits }: { limits: string[] }) {
       <h2>报告怎么读</h2>
       <ul>
         {limits.map((item) => (
-          <li key={item}>{rewriteLimit(item)}</li>
+          <li key={item}>{item}</li>
         ))}
       </ul>
     </section>
@@ -347,17 +347,6 @@ function aiStrongAlert(evidence: InterpretationEvidence[]) {
 
   const terms = ["openai", "dall-e", "dalle", "gemini", "notebooklm", "imagen", "synthid", "nano banana"];
   return terms.some((term) => text.includes(term)) ? sourceRecord : null;
-}
-
-function rewriteLimit(limit: string) {
-  const copy: Record<string, string> = {
-    "没有发现证据，不等于图片一定不是 AI 生成。": "没有发现可读证据，不等于图片一定不是 AI 生成。",
-    "压缩或编辑痕迹不等于图片一定被篡改或 P 图。":
-      "局部差异只是线索，不能单独证明图片被篡改、P 图或 AI 生成。",
-    "来源记录能说明文件里带有可验证信息，但不等于图片内容一定真实。":
-      "来源记录能说明文件里带有可验证信息，但不等于图片内容一定真实或上下文完整。",
-  };
-  return copy[limit] ?? limit;
 }
 
 function formatBytes(bytes: number) {
