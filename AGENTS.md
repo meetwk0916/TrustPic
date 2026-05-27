@@ -95,6 +95,7 @@ cd backend
 - `docs/PROGRESS.md`: current status and remaining work.
 - `docs/V0_RELEASE_CHECKLIST.md`: release gate status and v0 blockers.
 - `docs/V0_REAL_SAMPLE_SUITE.md`: real product-flow sample slots and audit command.
+- `docs/CLOUD_DEPLOYMENT.md`: overseas v0 Cloudflare Pages plus container backend deployment.
 - `docs/SAMPLE_VERIFICATION.md`: generated/public sample verification.
 - `docs/ELA_CALIBRATION.md`: ELA heuristic and calibration workflow.
 - `docs/REAL_SAMPLE_INTAKE.md`: real sample audit workflow.
