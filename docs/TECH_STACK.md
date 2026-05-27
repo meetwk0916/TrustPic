@@ -9,6 +9,7 @@ Use an API-first architecture:
 - Web v0 frontend: React + Vite.
 - Future Mini Program frontend: Taro React or native WeChat Mini Program, consuming the same backend API.
 - Shared contract: OpenAPI schema and generated or hand-maintained TypeScript types for the report JSON.
+- Domestic product path: Web + WeChat Mini Program should stay first-class; see `docs/CHINA_WEB_MINIPROGRAM_ARCHITECTURE.md`.
 
 This keeps v0 small while avoiding a rewrite of the core detection logic when Web and Mini Program clients diverge.
 
@@ -16,7 +17,7 @@ This keeps v0 small while avoiding a rewrite of the core detection logic when We
 
 Taro can target both H5 and WeChat Mini Program, but it imposes Mini Program constraints on the Web UI from day one. TrustPic v0 needs a fast, inspectable Web tool first. The UI surface is small enough that a later Mini Program client can reuse the API contract instead of sharing every component.
 
-If Mini Program becomes the primary distribution channel earlier than expected, we can switch the frontend decision to Taro before the UI grows.
+If Mini Program becomes the primary distribution channel earlier than expected, start with a native WeChat Mini Program shell that consumes the same API. Revisit Taro only if UI sharing becomes more valuable than platform-specific simplicity.
 
 ## Backend
 
@@ -66,9 +67,9 @@ Reasoning:
 
 ### Future WeChat Mini Program
 
-Preferred path: Taro React if we want React-like development and possible H5 reuse.
+Preferred first domestic path: native WeChat Mini Program shell if we want lower platform risk for upload, domain, and review behavior.
 
-Fallback path: native WeChat Mini Program if platform-specific constraints dominate.
+Fallback path: Taro React if Web + Mini Program report UI reuse becomes the stronger priority.
 
 Mini Program should not run the evidence engine locally. It should:
 
@@ -136,6 +137,7 @@ Frontend:
 - Whether GB 45438 scanning should start as simple byte/metadata detection or use a known open implementation.
 - Whether heatmaps should be returned inline as base64 for v0 or exposed as a derived response endpoint.
 - Whether v0 deploy target is local-only, a single VPS, or Cloudflare-fronted public demo. Decision: overseas v0 should use Cloudflare Pages for Web and a small container backend on Render/Fly-style hosting; see `docs/CLOUD_DEPLOYMENT.md`.
+- Which domestic deployment path should preserve Web + Mini Program. Decision: keep a shared FastAPI API, deploy Web on domestic static hosting/CDN, deploy the backend container on CloudBase Run or equivalent, and build the Mini Program as an API-consuming client; see `docs/CHINA_WEB_MINIPROGRAM_ARCHITECTURE.md`.
 
 ## Current v0 Detection Notes
 
