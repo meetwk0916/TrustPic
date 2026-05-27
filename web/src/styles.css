@@ -405,28 +405,6 @@ h2 {
   line-height: 1.5;
 }
 
-.originality-note {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  padding: 5px 9px;
-  border: 1px solid var(--source-border);
-  border-radius: 999px;
-  background: var(--source-bg);
-  color: var(--source-text);
-  font-size: 13px;
-  line-height: 1.2;
-}
-
-.originality-note span {
-  font-weight: 800;
-}
-
-.originality-note strong {
-  font-weight: 900;
-}
-
 .ai-alert {
   display: grid;
   gap: 8px;
