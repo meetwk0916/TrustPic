@@ -8,7 +8,7 @@ def build_interpretation(signals: ReportSignals) -> ReportInterpretation:
         evidence_chain=[
             ai_marker_evidence(signals.gb45438, signals.c2pa),
             ela_evidence(signals.ela),
-            source_record_evidence(signals.c2pa),
+            source_record_evidence(signals.c2pa, signals.exif),
             photo_metadata_evidence(signals.exif),
         ],
         limits=[
@@ -134,20 +134,21 @@ def ela_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
     )
 
 
-def source_record_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
+def source_record_evidence(signal: EvidenceSignal, exif_signal: EvidenceSignal | None = None) -> InterpretationEvidence:
     validation_state = c2pa_validation_state(signal)
     ai_source = ai_related_source_record(signal)
     google_source = google_source_record(signal)
     source_name = source_record_name(signal)
+    originality = file_originality(signal, exif_signal)
     if not signal.checked:
         return InterpretationEvidence(
             key="c2pa",
             title="图片来源记录",
             status_label="无法分析",
             summary="这次没有完成图片来源记录检查。",
-            means="TrustPic 没有得到这一项证据。",
-            does_not_mean="这不代表图片没有来源记录。",
-            details=signal.details,
+            means=f"TrustPic 没有得到这一项证据。{originality_sentence(originality)}",
+            does_not_mean="这不代表图片没有来源记录，也不代表当前文件一定是原始文件。",
+            details=source_record_details(signal, originality),
         )
     if signal.detected and ai_source:
         source_text = f"，来源线索包括 {source_name}" if source_name else ""
@@ -157,18 +158,18 @@ def source_record_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
                 title="图片来源记录",
                 status_label="支持证据",
                 summary="发现可验证的 AI 相关来源记录。",
-                means=f"文件里有可读取、签名有效的来源记录，且来源指向 AI 相关工具或签发方{source_text}。",
+                means=f"文件里有可读取、签名有效的来源记录，且来源指向 AI 相关工具或签发方{source_text}。{originality_sentence(originality)}",
                 does_not_mean="这不说明图片的每个局部都由 AI 生成，也不保证图片内容一定真实、完整或没有被断章取义。",
-                details=signal.details,
+                details=source_record_details(signal, originality),
             )
         return InterpretationEvidence(
             key="c2pa",
             title="图片来源记录",
             status_label="需留意",
             summary="发现 AI 相关来源记录，但验证状态不完整或异常。",
-            means=f"文件里有 AI 相关来源线索，但签名验证状态为 {validation_state or '未知'}{source_text}。",
+            means=f"文件里有 AI 相关来源线索，但签名验证状态为 {validation_state or '未知'}{source_text}。{originality_sentence(originality)}",
             does_not_mean="这不代表来源记录一定可信，也不等于图片内容一定造假。",
-            details=signal.details,
+            details=source_record_details(signal, originality),
         )
     if signal.detected and google_source:
         source_text = f"，来源线索包括 {source_name}" if source_name else ""
@@ -177,9 +178,9 @@ def source_record_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
             title="图片来源记录",
             status_label="需留意",
             summary="发现 Google 图片来源记录，但没有看到明确的 AI 产品名。",
-            means=f"文件里有 Google 相关来源记录，验证状态为 {validation_state or '未知'}{source_text}。",
+            means=f"文件里有 Google 相关来源记录，验证状态为 {validation_state or '未知'}{source_text}。{originality_sentence(originality)}",
             does_not_mean="这不能单独说明图片由 NotebookLM、Gemini 或 Imagen 生成；需要看到更具体的产品名、生成工具或水印证据。",
-            details=signal.details,
+            details=source_record_details(signal, originality),
         )
     if signal.detected and validation_state == "Valid":
         issuer = signal.details.get("signature_issuer") if isinstance(signal.details, dict) else None
@@ -189,9 +190,9 @@ def source_record_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
             title="图片来源记录",
             status_label="支持证据",
             summary="发现可验证的图片来源记录。",
-            means=f"文件里包含可读取的来源记录，签名验证状态为 Valid{issuer_text}。",
+            means=f"文件里包含可读取的来源记录，签名验证状态为 Valid{issuer_text}。{originality_sentence(originality)}",
             does_not_mean="这不保证图片内容一定真实，也不保证图片没有被断章取义。",
-            details=signal.details,
+            details=source_record_details(signal, originality),
         )
     if signal.detected:
         return InterpretationEvidence(
@@ -199,18 +200,18 @@ def source_record_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
             title="图片来源记录",
             status_label="需留意",
             summary="发现图片来源记录，但验证状态不完整或异常。",
-            means=f"文件里有来源记录，验证状态为 {validation_state or '未知'}。",
+            means=f"文件里有来源记录，验证状态为 {validation_state or '未知'}。{originality_sentence(originality)}",
             does_not_mean="这不代表图片一定造假，也不代表来源记录一定可信。",
-            details=signal.details,
+            details=source_record_details(signal, originality),
         )
     return InterpretationEvidence(
         key="c2pa",
         title="图片来源记录",
         status_label="未发现",
         summary="没有发现可读取的图片来源记录。",
-        means="文件里没有检测到 TrustPic v0 可读取的 C2PA 来源记录。",
+        means=f"文件里没有检测到 TrustPic v0 可读取的 C2PA 来源记录。{originality_sentence(originality)}",
         does_not_mean="这种情况很常见，尤其是截图、转发或平台下载后的图片；它不代表图片真实，也不代表图片一定是 AI 生成或被篡改。",
-        details=signal.details,
+        details=source_record_details(signal, originality),
     )
 
 
@@ -303,6 +304,59 @@ def source_record_name(signal: EvidenceSignal) -> str | None:
         if value:
             return str(value)
     return None
+
+
+def source_record_details(signal: EvidenceSignal, originality: dict) -> dict:
+    details = dict(signal.details) if isinstance(signal.details, dict) else {}
+    details["originality_label"] = originality["label"]
+    details["originality_reasons"] = originality["reasons"]
+    return details
+
+
+def originality_sentence(originality: dict) -> str:
+    reasons = originality.get("reasons") or []
+    reason_text = "；".join(str(reason) for reason in reasons)
+    if reason_text:
+        return f"当前文件原始性判断：{originality['label']}，因为{reason_text}。"
+    return f"当前文件原始性判断：{originality['label']}。"
+
+
+def file_originality(c2pa_signal: EvidenceSignal, exif_signal: EvidenceSignal | None) -> dict:
+    if not c2pa_signal.checked:
+        return {
+            "label": "无法判断",
+            "reasons": ["图片来源记录检查未完成"],
+        }
+
+    validation_state = c2pa_validation_state(c2pa_signal)
+    if c2pa_signal.detected and validation_state == "Valid":
+        return {
+            "label": "原始性较强",
+            "reasons": ["文件带有可读取且签名有效的来源记录"],
+        }
+
+    if c2pa_signal.detected:
+        return {
+            "label": "原始性有限",
+            "reasons": ["文件带有来源记录，但签名验证状态不完整或异常"],
+        }
+
+    if exif_signal is not None and rich_exif(exif_signal):
+        return {
+            "label": "原始性较强",
+            "reasons": ["文件保留了较多拍摄或保存信息"],
+        }
+
+    if exif_signal is not None and exif_signal.detected:
+        return {
+            "label": "原始性有限",
+            "reasons": ["文件保留了部分拍摄或保存信息，但没有可读取的来源记录"],
+        }
+
+    return {
+        "label": "原始性有限",
+        "reasons": ["没有可读取的来源记录或 EXIF；截图、转发、转码或二次保存都可能造成这种结果"],
+    }
 
 
 def exif_field_count(signal: EvidenceSignal) -> int:

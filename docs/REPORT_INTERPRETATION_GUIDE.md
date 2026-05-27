@@ -1,6 +1,6 @@
 # TrustPic Report Interpretation Guide
 
-Last aligned: 2026-05-26
+Last aligned: 2026-05-27
 
 This guide defines how TrustPic v0 explains a single-image report to users.
 
@@ -80,11 +80,21 @@ If absent:
 
 This covers C2PA-style provenance data, but the UI should use the human-readable phrase `图片来源记录`.
 
+This section also carries the file-originality reading. Keep the title as `图片来源记录`; do not add a separate top-level module unless the product later adds dedicated screenshot or screen-photo detection.
+
+Supported file-originality labels:
+
+- `原始性较强`: the current file has a valid source record or rich photo/save metadata.
+- `原始性有限`: the current file has incomplete source evidence, partial metadata, or no readable source/EXIF evidence.
+- `疑似二次采集`: reserved for future screenshot, platform re-encode, or screen-photo signals. Do not emit this label until the evidence module actually supports it.
+- `无法判断`: the source-record check did not complete.
+
 If detected and valid:
 
 - Status: `支持证据`
 - User meaning: the file contains a readable source record, and the signature validation state is valid.
-- Boundary: this does not guarantee the image content is true or shown in its original context.
+- File originality: usually `原始性较强`.
+- Boundary: this does not guarantee the image content is true, complete, or shown in its original context.
 
 If the source record includes AI-related provenance, such as OpenAI, the user-facing summary should say that this is an AI-related source record.
 
@@ -97,13 +107,15 @@ If detected but incomplete or abnormal:
 
 - Status: `需留意`
 - User meaning: a source record exists, but the validation state is incomplete, unknown, or abnormal.
+- File originality: usually `原始性有限`.
 - Boundary: this does not prove the picture is fake, and it does not make the record automatically trustworthy.
 
 If absent:
 
 - Status: `未发现`
 - User meaning: TrustPic v0 did not find a readable source record.
-- Boundary: this is common and does not mean the image is AI-generated or edited.
+- File originality: usually `原始性有限`; rich EXIF may raise the originality reading, but does not create source provenance.
+- Boundary: this is common and does not mean the image is AI-generated, edited, or authentic. Screenshots, forwarding, platform downloads, re-encoding, and secondary saves can all lose source records.
 
 ### 拍摄/编辑信息
 
@@ -136,10 +148,10 @@ TrustPic v0 chooses the conclusion by evidence priority, not by a generic verdic
    `发现这张图带有 AI 生成相关标记。`
 
 2. If no GB 45438/TC260 marker is detected, but the source record is AI-related:
-   `图片来源记录显示这张图与 AI 生成来源有关。`
+   `图片来源记录指向 AI 生成来源。`
 
 3. If no AI marker or AI-related source record is detected, but local ELA difference is detected:
-   `发现局部区域存在压缩差异集中线索。`
+   `发现局部区域存在差异集中线索。`
 
 4. If no AI marker, AI-related source record, or ELA finding is detected, but a valid source record is detected:
    `发现这张图带有可验证的来源记录。`
@@ -148,10 +160,10 @@ TrustPic v0 chooses the conclusion by evidence priority, not by a generic verdic
    `发现图片来源记录，但验证状态需要留意。`
 
 6. If only photo/edit metadata is detected:
-   `发现这张图包含拍摄或编辑信息，但没有发现 AI 生成标记。`
+   `发现这张图包含拍摄或保存信息，但没有发现 AI 相关来源或标记。`
 
 7. If no supported evidence is detected:
-   `没有发现这张图是 AI 生成或被明显处理的证据。`
+   `没有发现 TrustPic v0 能读取的 AI 来源、AI 标记或局部差异线索。`
 
 ## UI Requirements
 
