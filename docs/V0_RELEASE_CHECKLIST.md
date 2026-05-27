@@ -1,6 +1,6 @@
 # TrustPic v0 Release Checklist
 
-Last aligned: 2026-05-26
+Last aligned: 2026-05-27
 
 ## Status
 
@@ -16,6 +16,7 @@ v0 is runnable and usable as a single-image evidence report prototype. The curre
   - C2PA source record parsing.
   - AI-related C2PA source interpretation for OpenAI/DALL-E and explicit Google AI records such as Gemini, NotebookLM, Imagen, SynthID, and Nano Banana.
 - Metadata evidence: EXIF summary.
+- File-originality reading: `图片来源记录` summary/details include `原始性较强`, `原始性有限`, or `无法判断` without adding a separate warning module.
 - Local-difference evidence: tile-level ELA heatmap and local anomaly metrics.
 - Dataset tooling:
   - generated sample verifier.
@@ -31,7 +32,7 @@ cd backend
 .venv/bin/python -m pytest
 ```
 
-Result: `43 passed`.
+Result: `46 passed`.
 
 ```bash
 cd web
