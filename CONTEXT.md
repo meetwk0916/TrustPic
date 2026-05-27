@@ -9,11 +9,11 @@ A single-image report that states which supported provenance, metadata, and revi
 _Avoid_: AI detector result, authenticity proof, real/fake judgment
 
 **Supported Signal**:
-A signal TrustPic v0 knows how to inspect and describe, currently provenance metadata, EXIF metadata, GB 45438/TC260 AIGC markers, and ELA review indicators. A missing supported signal is evidence of absence only for that signal, not proof of authenticity.
+A signal TrustPic v0 knows how to inspect and describe, currently provenance metadata, AI-related source records, EXIF metadata, GB 45438/TC260 AIGC markers, and tile-level ELA local-difference clues. A missing supported signal is evidence of absence only for that signal, not proof of authenticity.
 _Avoid_: truth signal, proof, probability
 
 **Full-Scenario Full-Chain Coverage**:
-Coverage of the TrustPic v0 evidence matrix and validation flow: C2PA, GB 45438/TC260, EXIF, ELA, metadata-stripped files, remote dataset extraction, label normalization, confidence gating, and report generation. It does not mean connecting every available AI-vs-real benchmark.
+Coverage of the TrustPic v0 evidence matrix and validation flow: C2PA, AI-related source records, GB 45438/TC260, EXIF, tile-level local-difference ELA, metadata-stripped files, remote dataset extraction, label normalization, confidence gating, and report generation. It does not mean connecting every available AI-vs-real benchmark.
 _Avoid_: all AI detector benchmarks, universal fake-image coverage
 
 **Remote Extraction Smoke Source**:
@@ -41,8 +41,12 @@ A real photography source with preserved technical EXIF metadata, used to verify
 _Avoid_: generated EXIF fixture, metadata-free photo benchmark
 
 **ELA Review Smoke**:
-A small validation set that checks whether ELA metrics and heatmaps are produced and reported cautiously for edited or recompressed files. It is not a tampering benchmark and does not prove manipulation.
+A small validation set that checks whether tile-level ELA metrics and heatmaps are produced and reported cautiously as local-difference clues. It is not a tampering benchmark and does not prove manipulation.
 _Avoid_: forensic tampering evaluation, manipulation proof
+
+**Real Sample Manifest**:
+A private, outside-git manifest that maps real product-flow files to required v0 validation slots: OpenAI original, Google AI original and re-encoded copy, domestic GB45438 original, camera EXIF, platform-stripped file, and known local edit. The example lives at `docs/v0-real-sample-manifest.example.json`; real images stay outside the repository.
+_Avoid_: committing real samples, ad hoc untracked sample folder
 
 ## Example Dialogue
 
@@ -56,4 +60,4 @@ Domain expert: "Not in the first phase. The minimum coverage set is enough until
 
 Dev: "If a sample has no C2PA or EXIF, can the report say it is fake or real?"
 
-Domain expert: "No. The evidence report can say no supported provenance or metadata signal was found, then list limitations and recommend review."
+Domain expert: "No. The evidence report can say no supported readable evidence was found, then explain how to read that boundary. It should not recommend a workflow or imply authenticity."
