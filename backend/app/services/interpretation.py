@@ -145,7 +145,7 @@ def source_record_evidence(signal: EvidenceSignal, exif_signal: EvidenceSignal |
             key="c2pa",
             title="图片来源记录",
             status_label="无法分析",
-            summary="这次没有完成图片来源记录检查。",
+            summary=source_record_summary("这次没有完成图片来源记录检查。", originality),
             means=f"TrustPic 没有得到这一项证据。{originality_sentence(originality)}",
             does_not_mean="这不代表图片没有来源记录，也不代表当前文件一定是原始文件。",
             details=source_record_details(signal, originality),
@@ -157,7 +157,7 @@ def source_record_evidence(signal: EvidenceSignal, exif_signal: EvidenceSignal |
                 key="c2pa",
                 title="图片来源记录",
                 status_label="支持证据",
-                summary="发现可验证的 AI 相关来源记录。",
+                summary=source_record_summary("发现可验证的 AI 相关来源记录。", originality),
                 means=f"文件里有可读取、签名有效的来源记录，且来源指向 AI 相关工具或签发方{source_text}。{originality_sentence(originality)}",
                 does_not_mean="这不说明图片的每个局部都由 AI 生成，也不保证图片内容一定真实、完整或没有被断章取义。",
                 details=source_record_details(signal, originality),
@@ -166,7 +166,7 @@ def source_record_evidence(signal: EvidenceSignal, exif_signal: EvidenceSignal |
             key="c2pa",
             title="图片来源记录",
             status_label="需留意",
-            summary="发现 AI 相关来源记录，但验证状态不完整或异常。",
+            summary=source_record_summary("发现 AI 相关来源记录，但验证状态不完整或异常。", originality),
             means=f"文件里有 AI 相关来源线索，但签名验证状态为 {validation_state or '未知'}{source_text}。{originality_sentence(originality)}",
             does_not_mean="这不代表来源记录一定可信，也不等于图片内容一定造假。",
             details=source_record_details(signal, originality),
@@ -177,7 +177,7 @@ def source_record_evidence(signal: EvidenceSignal, exif_signal: EvidenceSignal |
             key="c2pa",
             title="图片来源记录",
             status_label="需留意",
-            summary="发现 Google 图片来源记录，但没有看到明确的 AI 产品名。",
+            summary=source_record_summary("发现 Google 图片来源记录，但没有看到明确的 AI 产品名。", originality),
             means=f"文件里有 Google 相关来源记录，验证状态为 {validation_state or '未知'}{source_text}。{originality_sentence(originality)}",
             does_not_mean="这不能单独说明图片由 NotebookLM、Gemini 或 Imagen 生成；需要看到更具体的产品名、生成工具或水印证据。",
             details=source_record_details(signal, originality),
@@ -189,7 +189,7 @@ def source_record_evidence(signal: EvidenceSignal, exif_signal: EvidenceSignal |
             key="c2pa",
             title="图片来源记录",
             status_label="支持证据",
-            summary="发现可验证的图片来源记录。",
+            summary=source_record_summary("发现可验证的图片来源记录。", originality),
             means=f"文件里包含可读取的来源记录，签名验证状态为 Valid{issuer_text}。{originality_sentence(originality)}",
             does_not_mean="这不保证图片内容一定真实，也不保证图片没有被断章取义。",
             details=source_record_details(signal, originality),
@@ -199,7 +199,7 @@ def source_record_evidence(signal: EvidenceSignal, exif_signal: EvidenceSignal |
             key="c2pa",
             title="图片来源记录",
             status_label="需留意",
-            summary="发现图片来源记录，但验证状态不完整或异常。",
+            summary=source_record_summary("发现图片来源记录，但验证状态不完整或异常。", originality),
             means=f"文件里有来源记录，验证状态为 {validation_state or '未知'}。{originality_sentence(originality)}",
             does_not_mean="这不代表图片一定造假，也不代表来源记录一定可信。",
             details=source_record_details(signal, originality),
@@ -208,7 +208,7 @@ def source_record_evidence(signal: EvidenceSignal, exif_signal: EvidenceSignal |
         key="c2pa",
         title="图片来源记录",
         status_label="未发现",
-        summary="没有发现可读取的图片来源记录。",
+        summary=source_record_summary("没有发现可读取的图片来源记录。", originality),
         means=f"文件里没有检测到 TrustPic v0 可读取的 C2PA 来源记录。{originality_sentence(originality)}",
         does_not_mean="这种情况很常见，尤其是截图、转发或平台下载后的图片；它不代表图片真实，也不代表图片一定是 AI 生成或被篡改。",
         details=source_record_details(signal, originality),
@@ -311,6 +311,10 @@ def source_record_details(signal: EvidenceSignal, originality: dict) -> dict:
     details["originality_label"] = originality["label"]
     details["originality_reasons"] = originality["reasons"]
     return details
+
+
+def source_record_summary(base: str, originality: dict) -> str:
+    return f"{base}当前文件{originality['label']}。"
 
 
 def originality_sentence(originality: dict) -> str:
