@@ -12,9 +12,9 @@ def build_interpretation(signals: ReportSignals) -> ReportInterpretation:
             photo_metadata_evidence(signals.exif),
         ],
         limits=[
-            "没有发现证据，不等于图片一定不是 AI 生成。",
-            "压缩或编辑痕迹不等于图片一定被篡改或 P 图。",
-            "来源记录能说明文件里带有可验证信息，但不等于图片内容一定真实。",
+            "没有发现可读证据，不等于图片一定不是 AI 生成。",
+            "局部差异只是线索，不能单独证明图片被篡改、P 图或 AI 生成。",
+            "来源记录能说明文件里带有可验证信息，但不等于图片内容一定真实或上下文完整。",
         ],
     )
 
@@ -23,16 +23,16 @@ def human_conclusion(signals: ReportSignals) -> str:
     if signals.gb45438.detected:
         return "发现这张图带有 AI 生成相关标记。"
     if ai_related_source_record(signals.c2pa):
-        return "图片来源记录显示这张图与 AI 生成来源有关。"
+        return "图片来源记录指向 AI 生成来源。"
     if signals.ela.detected:
-        return "发现局部区域存在压缩差异集中线索。"
+        return "发现局部区域存在差异集中线索。"
     if signals.c2pa.detected:
         if c2pa_validation_state(signals.c2pa) == "Valid":
             return "发现这张图带有可验证的来源记录。"
         return "发现图片来源记录，但验证状态需要留意。"
     if signals.exif.detected:
-        return "发现这张图包含拍摄或编辑信息，但没有发现 AI 生成标记。"
-    return "没有发现这张图是 AI 生成或被明显处理的证据。"
+        return "发现这张图包含拍摄或保存信息，但没有发现 AI 相关来源或标记。"
+    return "没有发现 TrustPic v0 能读取的 AI 来源、AI 标记或局部差异线索。"
 
 
 def confidence_label(signals: ReportSignals) -> str:
@@ -83,9 +83,9 @@ def ai_marker_evidence(signal: EvidenceSignal, c2pa_signal: EvidenceSignal | Non
             key="gb45438",
             title="AI 生成标记",
             status_label="未发现",
-            summary="没有发现 GB 45438/TC260 这类 AI 生成标记；但来源记录里有 AI 相关证据。",
-            means="文件里没有检测到当前支持的国内 AI 生成标记字段。",
-            does_not_mean="这不抵消图片来源记录里的 AI 相关证据；OpenAI 等签发方记录属于来源记录，不属于 GB 45438/TC260 标记。",
+            summary="没有发现国内显式 AI 标记；但来源记录已经指向 AI 生成来源。",
+            means="这一项只看 GB 45438/TC260 或通用 AIGC 标记；OpenAI、Gemini、NotebookLM 这类来源记录会在图片来源记录里展示。",
+            does_not_mean="这不代表没有 AI 证据；对这张图，应把图片来源记录作为主要 AI 相关证据。",
             details=signal.details,
         )
     return InterpretationEvidence(
@@ -118,9 +118,9 @@ def ela_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
             key="ela",
             title="局部差异线索",
             status_label="需留意",
-            summary="发现局部区域的压缩差异集中。",
-            means=f"ELA tile 分析发现 {anomaly_count} 个局部异常块，占比 {anomaly_ratio}，全图 mean error 为 {mean_error}。",
-            does_not_mean="这只是局部差异线索，不能单独证明图片被 P 过、被恶意篡改或由 AI 生成。",
+            summary="发现局部区域的差异更集中。",
+            means=f"ELA tile 分析发现 {anomaly_count} 个局部异常块，占比 {anomaly_ratio}，全图 mean error 为 {mean_error}。这些区域和全图整体压缩响应不太一致。",
+            does_not_mean="这只是局部差异线索，不能单独证明图片被篡改、P 图或由 AI 生成。",
             details=signal.details,
         )
     return InterpretationEvidence(
@@ -129,7 +129,7 @@ def ela_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
         status_label="未发现",
         summary="没有发现局部差异集中线索。",
         means=f"没有发现少量区域明显偏离整体压缩模式；全图 mean error 为 {mean_error}。",
-        does_not_mean="整体压缩、截图、平台转码属于常见流转行为；没有局部差异线索也不代表图片一定没有被编辑。",
+        does_not_mean="截图、平台转码和整体压缩都很常见；没有局部差异线索，也不代表图片一定没有被编辑。",
         details=signal.details,
     )
 
@@ -156,17 +156,17 @@ def source_record_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
                 key="c2pa",
                 title="图片来源记录",
                 status_label="支持证据",
-                summary="发现可验证的 AI 相关图片来源记录。",
-                means=f"文件里包含可读取的来源记录，验证状态为 Valid{source_text}。",
-                does_not_mean="这不说明图片的每个局部都由 AI 生成，也不保证图片内容一定真实或上下文完整。",
+                summary="发现可验证的 AI 相关来源记录。",
+                means=f"文件里有可读取、签名有效的来源记录，且来源指向 AI 相关工具或签发方{source_text}。",
+                does_not_mean="这不说明图片的每个局部都由 AI 生成，也不保证图片内容一定真实、完整或没有被断章取义。",
                 details=signal.details,
             )
         return InterpretationEvidence(
             key="c2pa",
             title="图片来源记录",
             status_label="需留意",
-            summary="发现 AI 相关图片来源记录，但验证状态不完整或异常。",
-            means=f"文件里有 AI 相关来源线索，验证状态为 {validation_state or '未知'}{source_text}。",
+            summary="发现 AI 相关来源记录，但验证状态不完整或异常。",
+            means=f"文件里有 AI 相关来源线索，但签名验证状态为 {validation_state or '未知'}{source_text}。",
             does_not_mean="这不代表来源记录一定可信，也不等于图片内容一定造假。",
             details=signal.details,
         )
@@ -178,7 +178,7 @@ def source_record_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
             status_label="需留意",
             summary="发现 Google 图片来源记录，但没有看到明确的 AI 产品名。",
             means=f"文件里有 Google 相关来源记录，验证状态为 {validation_state or '未知'}{source_text}。",
-            does_not_mean="这不能单独说明图片由 NotebookLM、Gemini 或 Imagen 生成；需要看到更具体的产品、生成工具或水印证据。",
+            does_not_mean="这不能单独说明图片由 NotebookLM、Gemini 或 Imagen 生成；需要看到更具体的产品名、生成工具或水印证据。",
             details=signal.details,
         )
     if signal.detected and validation_state == "Valid":
@@ -209,7 +209,7 @@ def source_record_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
         status_label="未发现",
         summary="没有发现可读取的图片来源记录。",
         means="文件里没有检测到 TrustPic v0 可读取的 C2PA 来源记录。",
-        does_not_mean="这种情况很常见，不代表图片是 AI 生成，也不代表图片被篡改。",
+        does_not_mean="这种情况很常见，尤其是截图、转发或平台下载后的图片；它不代表图片真实，也不代表图片一定是 AI 生成或被篡改。",
         details=signal.details,
     )
 
@@ -231,7 +231,7 @@ def photo_metadata_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
             key="exif",
             title="拍摄/编辑信息",
             status_label="支持证据",
-            summary=f"发现 {field_count} 项拍摄或编辑信息。",
+            summary=f"发现 {field_count} 项拍摄或保存信息。",
             means="文件里包含 EXIF 元数据，可能包括相机、软件、拍摄参数或保存信息。",
             does_not_mean="EXIF 可以被修改或移除；它不能单独证明图片真实，也不能排除后期处理。",
             details=signal.details,
@@ -240,7 +240,7 @@ def photo_metadata_evidence(signal: EvidenceSignal) -> InterpretationEvidence:
         key="exif",
         title="拍摄/编辑信息",
         status_label="未发现",
-        summary="没有发现拍摄或编辑信息。",
+        summary="没有发现拍摄或保存信息。",
         means="文件里没有检测到 EXIF 元数据。",
         does_not_mean="很多截图、平台转发图或压缩图都没有 EXIF；这不代表图片一定可疑。",
         details=signal.details,
