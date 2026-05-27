@@ -1,3 +1,4 @@
+import os
 from io import BytesIO
 
 from fastapi import UploadFile
@@ -10,8 +11,8 @@ from app.services.exif import inspect_exif
 from app.services.gb45438 import inspect_gb45438
 from app.services.interpretation import build_interpretation
 
-MAX_UPLOAD_BYTES = 15 * 1024 * 1024
-MAX_PIXELS = 40_000_000
+MAX_UPLOAD_BYTES = int(os.getenv("TRUSTPIC_MAX_UPLOAD_MB", "15")) * 1024 * 1024
+MAX_PIXELS = int(os.getenv("TRUSTPIC_MAX_PIXELS", "40000000"))
 SUPPORTED_MIME_TYPES = {
     "image/jpeg",
     "image/png",

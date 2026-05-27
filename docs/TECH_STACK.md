@@ -135,7 +135,7 @@ Frontend:
 - Whether `c2pa-python` installs cleanly on the target deployment Python and platform.
 - Whether GB 45438 scanning should start as simple byte/metadata detection or use a known open implementation.
 - Whether heatmaps should be returned inline as base64 for v0 or exposed as a derived response endpoint.
-- Whether v0 deploy target is local-only, a single VPS, or Cloudflare-fronted public demo.
+- Whether v0 deploy target is local-only, a single VPS, or Cloudflare-fronted public demo. Decision: overseas v0 should use Cloudflare Pages for Web and a small container backend on Render/Fly-style hosting; see `docs/CLOUD_DEPLOYMENT.md`.
 
 ## Current v0 Detection Notes
 
