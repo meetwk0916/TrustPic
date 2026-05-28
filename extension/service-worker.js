@@ -3,18 +3,18 @@ const DEFAULT_API_BASE = "http://127.0.0.1:8000";
 
 installContextMenus();
 
-chrome.runtime.onInstalled.addListener(() => {
+addChromeListener(chrome.runtime?.onInstalled, () => {
   installContextMenus();
   if (chrome.sidePanel?.setPanelBehavior) {
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
   }
 });
 
-chrome.runtime.onStartup.addListener(() => {
+addChromeListener(chrome.runtime?.onStartup, () => {
   installContextMenus();
 });
 
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+addChromeListener(chrome.contextMenus?.onClicked, async (info, tab) => {
   if (info.menuItemId !== MENU_ID) return;
 
   openReportPanel(tab);
@@ -69,7 +69,15 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   }
 });
 
+function addChromeListener(event, listener) {
+  if (event?.addListener) {
+    event.addListener(listener);
+  }
+}
+
 function installContextMenus() {
+  if (!chrome.contextMenus?.removeAll || !chrome.contextMenus?.create) return;
+
   const copy = menuCopy();
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
