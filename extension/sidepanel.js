@@ -1,14 +1,12 @@
 const DEFAULT_API_BASE = "http://127.0.0.1:8000";
-const SUPPORTED_LOCALES = ["zh-CN", "en-US"];
 
 const COPY = {
   "zh-CN": {
     subtitle: "右键图片证据报告",
-    primaryHint: "在网页图片上右键，选择 Analyze image with TrustPic。插件会直接调用 TrustPic API 并弹出报告。",
-    analyzeUrl: "分析 URL",
+    primaryHint: "在网页图片上右键，选择 Analyze image with TrustPic。报告会在这个侧栏里更新。",
+    analyzeUrl: "分析",
     urlPlaceholder: "图片 URL",
     source: "图片来源",
-    confidence: "置信度",
     conclusion: "结论",
     aiEvidence: "AI 相关证据",
     coreEvidence: "核心证据",
@@ -26,11 +24,10 @@ const COPY = {
   },
   "en-US": {
     subtitle: "Right-click image evidence report",
-    primaryHint: "Right-click an image on a page and choose Analyze image with TrustPic. The extension calls the TrustPic API and opens this report.",
-    analyzeUrl: "Analyze URL",
+    primaryHint: "Right-click an image on a page and choose Analyze image with TrustPic. The report updates in this side panel.",
+    analyzeUrl: "Analyze",
     urlPlaceholder: "Image URL",
     source: "Image source",
-    confidence: "Confidence",
     conclusion: "Conclusion",
     aiEvidence: "AI-related evidence",
     coreEvidence: "Core evidence",
@@ -50,17 +47,14 @@ const COPY = {
 
 const state = {
   apiBase: DEFAULT_API_BASE,
-  locale: "zh-CN",
+  locale: browserLocale(),
 };
 
 const elements = {
   apiBase: document.getElementById("apiBase"),
   imageUrl: document.getElementById("imageUrl"),
   urlButton: document.getElementById("urlButton"),
-  localeButton: document.getElementById("localeButton"),
   notice: document.getElementById("notice"),
-  previewSection: document.getElementById("previewSection"),
-  preview: document.getElementById("preview"),
   sourceSection: document.getElementById("sourceSection"),
   sourceLink: document.getElementById("sourceLink"),
   report: document.getElementById("report"),
@@ -79,16 +73,8 @@ const elements = {
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
-  const saved = await chrome.storage.local.get([
-    "activeAnalysis",
-    "apiBase",
-    "lastError",
-    "lastReport",
-    "lastSourceUrl",
-    "locale",
-  ]);
+  const saved = await chrome.storage.local.get(["activeAnalysis", "apiBase", "lastError", "lastReport", "lastSourceUrl"]);
   state.apiBase = normalizeApiBase(saved.apiBase || DEFAULT_API_BASE);
-  state.locale = SUPPORTED_LOCALES.includes(saved.locale) ? saved.locale : "zh-CN";
 
   elements.apiBase.value = state.apiBase;
   elements.imageUrl.value = saved.lastSourceUrl || "";
@@ -103,12 +89,6 @@ function bindEvents() {
     state.apiBase = normalizeApiBase(elements.apiBase.value || DEFAULT_API_BASE);
     elements.apiBase.value = state.apiBase;
     await chrome.storage.local.set({ apiBase: state.apiBase });
-  });
-
-  elements.localeButton.addEventListener("click", async () => {
-    state.locale = state.locale === "zh-CN" ? "en-US" : "zh-CN";
-    await chrome.storage.local.set({ locale: state.locale });
-    applyCopy();
   });
 
   elements.urlButton.addEventListener("click", analyzeImageUrl);
@@ -131,13 +111,12 @@ function applyCopy() {
   document.getElementById("urlButton").textContent = copy.analyzeUrl;
   document.getElementById("imageUrl").placeholder = copy.urlPlaceholder;
   document.getElementById("sourceLabel").textContent = copy.source;
-  document.getElementById("confidenceLabel").textContent = copy.confidence;
   document.getElementById("conclusionLabel").textContent = copy.conclusion;
   document.getElementById("aiAlertLabel").textContent = copy.aiEvidence;
   document.getElementById("coreEvidenceLabel").textContent = copy.coreEvidence;
   document.getElementById("heatmapLabel").textContent = copy.heatmap;
   document.getElementById("notesLabel").textContent = copy.notes;
-  elements.localeButton.textContent = state.locale === "en-US" ? "中文" : "English";
+  document.getElementById("localeBadge").textContent = state.locale;
 }
 
 function renderStoredState(saved) {
@@ -176,13 +155,15 @@ async function analyzeImageUrl() {
       sourceUrl,
       startedAt: Date.now(),
     },
+    lastReport: null,
     lastError: null,
+    lastSourceUrl: sourceUrl,
   });
   renderSource(sourceUrl);
 
   try {
     showNotice(copy.fetching);
-    const report = await analyzeUrlInPopup(sourceUrl);
+    const report = await analyzeUrlInSidePanel(sourceUrl);
     await chrome.storage.local.set({
       activeAnalysis: {
         status: "complete",
@@ -206,7 +187,7 @@ async function analyzeImageUrl() {
   }
 }
 
-async function analyzeUrlInPopup(sourceUrl) {
+async function analyzeUrlInSidePanel(sourceUrl) {
   const response = await fetch(sourceUrl, {
     credentials: "include",
     cache: "no-store",
@@ -237,10 +218,6 @@ function renderSource(sourceUrl) {
   elements.sourceLink.href = sourceUrl;
   elements.sourceLink.textContent = sourceUrl;
   elements.imageUrl.value = sourceUrl;
-  if (sourceUrl.startsWith("http://") || sourceUrl.startsWith("https://") || sourceUrl.startsWith("data:")) {
-    elements.preview.src = sourceUrl;
-    elements.previewSection.hidden = false;
-  }
 }
 
 function renderReport(report) {
@@ -340,11 +317,9 @@ function isSupportingEvidence(status) {
 
 function showNotice(message) {
   elements.notice.textContent = message;
-  elements.notice.hidden = false;
 }
 
 function hideNotice() {
-  elements.notice.hidden = true;
   elements.notice.textContent = "";
 }
 
@@ -354,6 +329,11 @@ function analyzeEndpoint() {
 
 function normalizeApiBase(value) {
   return String(value || DEFAULT_API_BASE).replace(/\/+$/, "");
+}
+
+function browserLocale() {
+  const language = chrome.i18n?.getUILanguage?.() || navigator.language || "zh-CN";
+  return language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
 }
 
 function supportedImageType(contentType, url) {

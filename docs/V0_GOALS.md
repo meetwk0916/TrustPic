@@ -47,7 +47,7 @@ TrustPic v0 must not claim:
 - Web UI that can upload one image and display the report.
 - Web UI that highlights strong AI-related evidence, separates core evidence from local-difference analysis, and supports light/dark mode.
 - Chinese and English report interpretation via `locale=zh-CN` or `locale=en-US` on `POST /api/v1/analyze`.
-- Unpacked Chrome extension for self-use right-click image analysis through the same backend API.
+- Unpacked Chrome Side Panel extension for self-use right-click image analysis through the same backend API.
 - Local run command documented in the repository.
 
 ### Deferred

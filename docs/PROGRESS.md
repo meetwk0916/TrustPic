@@ -14,7 +14,7 @@ The current implementation includes:
 - Evidence-first report contract with verdict, summary, signals, human-readable `interpretation`, limitations, recommendation, and `assets.ela_heatmap_data_url`.
 - React + Vite Web UI for selecting an image, previewing it, showing file metadata, calling the backend, and displaying a user-readable conclusion, confidence label, ordered evidence chain, foldable evidence explanations, boundary notes, and ELA heatmap.
 - Web UI can switch between Chinese and English. The frontend passes `locale=zh-CN` or `locale=en-US` to the backend, and the backend generates localized `interpretation` wording from the same evidence signals.
-- Unpacked Chrome extension client under `extension/` for self-use right-click image analysis and image URL fallback.
+- Unpacked Chrome extension client under `extension/` for self-use right-click image analysis in Chrome Side Panel and image URL fallback.
 - AI-related C2PA source records, including OpenAI and explicit Google AI product records such as Gemini, NotebookLM, Imagen, SynthID, and Nano Banana, are interpreted as AI-related source evidence even when GB 45438/TC260 markers are absent.
 - `图片来源记录` now also carries file-originality reading in its visible summary and details (`originality_label` and `originality_reasons`) without adding a separate top-level report module.
 - ELA is now a tile-level local-difference signal. Ordinary global compression is ignored as a primary user-facing finding; `review` means a small set of local tiles stands out from the overall recompression pattern.
@@ -432,11 +432,11 @@ git diff --check
 
 Result: no whitespace errors.
 
-Validated after the unpacked Chrome extension client was added:
+Validated after the unpacked Chrome Side Panel extension client was added:
 
 ```bash
 python3 -m json.tool extension/manifest.json
-node --check extension/popup.js
+node --check extension/sidepanel.js
 node --check extension/service-worker.js
 ```
 
@@ -461,7 +461,7 @@ Result: TypeScript build and Vite production build passed.
 - Remote: `https://github.com/meetwk0916/TrustPic`
 - Branch: `main`
 - Initial commit: `dfb0104 Initial TrustPic v0 prototype`
-- CodeGraph status: up to date after bilingual report interpretation additions.
+- CodeGraph status: up to date after Chrome Side Panel extension additions.
 
 ## Not Blocked By API Quota
 

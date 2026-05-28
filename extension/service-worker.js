@@ -7,9 +7,12 @@ chrome.runtime.onInstalled.addListener(() => {
     title: "Analyze image with TrustPic",
     contexts: ["image"],
   });
+  if (chrome.sidePanel?.setPanelBehavior) {
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+  }
 });
 
-chrome.contextMenus.onClicked.addListener(async (info) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== MENU_ID || !info.srcUrl) return;
 
   const sourceUrl = info.srcUrl;
@@ -19,25 +22,24 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
       sourceUrl,
       startedAt: Date.now(),
     },
+    lastReport: null,
     lastError: null,
+    lastSourceUrl: sourceUrl,
   });
 
   chrome.action.setBadgeText({ text: "..." });
   chrome.action.setBadgeBackgroundColor({ color: "#d97706" });
 
-  await chrome.windows.create({
-    url: chrome.runtime.getURL("popup.html"),
-    type: "popup",
-    width: 460,
-    height: 720,
-  });
+  if (tab?.windowId && chrome.sidePanel?.open) {
+    await chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
+  }
 
   try {
-    const settings = await chrome.storage.local.get(["apiBase", "locale"]);
+    const settings = await chrome.storage.local.get(["apiBase"]);
     const report = await analyzeImageUrl({
       sourceUrl,
       apiBase: settings.apiBase || DEFAULT_API_BASE,
-      locale: settings.locale || "zh-CN",
+      locale: browserLocale(),
     });
 
     await chrome.storage.local.set({
@@ -99,6 +101,11 @@ async function analyzeImageUrl({ sourceUrl, apiBase, locale }) {
 function analyzeEndpoint(apiBase, locale) {
   const base = String(apiBase || DEFAULT_API_BASE).replace(/\/+$/, "");
   return `${base}/api/v1/analyze?locale=${encodeURIComponent(locale || "zh-CN")}`;
+}
+
+function browserLocale() {
+  const language = chrome.i18n?.getUILanguage?.() || "zh-CN";
+  return language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
 }
 
 function supportedImageType(contentType, url) {
