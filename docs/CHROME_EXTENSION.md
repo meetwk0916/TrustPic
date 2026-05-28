@@ -9,8 +9,11 @@ The Chrome extension is a self-use right-click client for the existing TrustPic 
 - Manifest V3 unpacked extension under `extension/`.
 - Right-click image analysis:
   - right-click an image
-  - choose `Analyze image with TrustPic`
+  - choose `用 TrustPic 分析这张图片` on Chinese Chrome, or `Analyze image with TrustPic` on other Chrome UI languages
   - the extension opens Chrome Side Panel, fetches the image bytes, calls the configured API, and updates the report in the side panel
+- Direct image page analysis:
+  - when a browser tab is itself an image URL, right-click the page
+  - choose `用 TrustPic 分析当前图片页面` or `Analyze current image page with TrustPic`
 - Side Panel supports:
   - API base URL setting
   - language selected automatically from the browser UI language
@@ -47,8 +50,13 @@ You can change the API field in the side panel for a deployed backend.
 For a page image:
 
 1. Right-click an image on a page.
-2. Choose `Analyze image with TrustPic`.
+2. Choose the TrustPic image analysis menu item.
 3. The extension opens Chrome Side Panel when the analysis starts and updates it with the result.
+
+For an image opened as its own browser tab:
+
+1. Right-click the page.
+2. Choose the TrustPic current-image-page analysis menu item.
 
 For a direct image URL fallback:
 
