@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TrustPic</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>TrustPic</h1>
+          <p id="subtitle">单图证据报告</p>
+        </div>
+        <button id="localeButton" class="ghost-button" type="button">English</button>
+      </header>
+
+      <section class="settings">
+        <label for="apiBase">API</label>
+        <input id="apiBase" type="url" autocomplete="off" />
+      </section>
+
+      <section class="input-panel">
+        <p id="primaryHint" class="primary-hint">在网页图片上右键，选择 Analyze image with TrustPic。</p>
+        <div class="url-row">
+          <input id="imageUrl" type="url" placeholder="图片 URL" />
+          <button id="urlButton" type="button">分析 URL</button>
+        </div>
+      </section>
+
+      <div id="notice" class="notice" hidden></div>
+
+      <section id="previewSection" class="preview-section" hidden>
+        <img id="preview" alt="Selected image preview" />
+      </section>
+
+      <section id="sourceSection" class="source-section" hidden>
+        <span id="sourceLabel">图片来源</span>
+        <a id="sourceLink" href="#" target="_blank" rel="noreferrer"></a>
+      </section>
+
+      <section id="report" class="report" hidden>
+        <div class="summary-grid">
+          <div class="confidence">
+            <span id="confidenceLabel">置信度</span>
+            <strong id="confidenceValue"></strong>
+          </div>
+          <div class="conclusion">
+            <span id="conclusionLabel">结论</span>
+            <p id="conclusionText"></p>
+          </div>
+        </div>
+
+        <section id="aiAlert" class="ai-alert" hidden>
+          <span id="aiAlertLabel">AI 相关证据</span>
+          <strong id="aiAlertSummary"></strong>
+          <p id="aiAlertMeans"></p>
+        </section>
+
+        <section>
+          <h2 id="coreEvidenceLabel">核心证据</h2>
+          <div id="evidenceList" class="evidence-list"></div>
+        </section>
+
+        <section id="heatmapSection" class="heatmap-section" hidden>
+          <h2 id="heatmapLabel">局部差异热图</h2>
+          <img id="heatmap" alt="ELA heatmap" />
+        </section>
+
+        <section class="notes">
+          <h2 id="notesLabel">报告怎么读</h2>
+          <ul id="limits"></ul>
+        </section>
+      </section>
+    </main>
+
+    <template id="evidenceTemplate">
+      <article class="evidence-card">
+        <header>
+          <div>
+            <h3></h3>
+            <p class="summary"></p>
+          </div>
+          <span class="status"></span>
+        </header>
+        <details>
+          <summary class="expand-label">展开解释</summary>
+          <div class="detail-grid">
+            <div>
+              <h4 class="means-label">能说明什么</h4>
+              <p class="means"></p>
+            </div>
+            <div>
+              <h4 class="does-not-label">不能说明什么</h4>
+              <p class="does-not"></p>
+            </div>
+          </div>
+        </details>
+      </article>
+    </template>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

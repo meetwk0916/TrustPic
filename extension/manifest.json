@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "TrustPic",
+  "description": "Analyze a single image with a TrustPic API and render the evidence report.",
+  "version": "0.1.0",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "TrustPic"
+  },
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "permissions": ["contextMenus", "storage"],
+  "host_permissions": ["<all_urls>"]
+}
