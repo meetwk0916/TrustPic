@@ -19,7 +19,7 @@ type EvidenceSignal = {
 type InterpretationEvidence = {
   key: "gb45438" | "ela" | "c2pa" | "exif";
   title: string;
-  status_label: "支持证据" | "需留意" | "未发现" | "无法分析";
+  status_label: string;
   summary: string;
   means: string;
   does_not_mean: string;
@@ -37,7 +37,7 @@ type AnalyzeResponse = {
     ela: EvidenceSignal;
   };
   interpretation: {
-    confidence_label: "强" | "较强" | "中等" | "有限";
+    confidence_label: string;
     conclusion: string;
     evidence_chain: InterpretationEvidence[];
     limits: string[];
@@ -52,12 +52,87 @@ type AnalyzeResponse = {
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
 
 type Theme = "light" | "dark";
+type Locale = "zh-CN" | "en-US";
+
+const UI_COPY: Record<Locale, Record<string, string>> = {
+  "zh-CN": {
+    subtitle: "单图证据报告",
+    themeAria: "切换明暗模式",
+    lightTheme: "亮色",
+    darkTheme: "暗色",
+    localeAria: "切换语言",
+    chooseFile: "选择 JPG、PNG 或 WebP",
+    analyze: "分析",
+    analyzing: "分析中",
+    selectFirst: "请先选择一张图片。",
+    analysisFailed: "分析失败。",
+    noImage: "未选择图片",
+    reportEmpty: "报告会显示在这里",
+    file: "文件",
+    type: "类型",
+    size: "大小",
+    unknown: "未知",
+    confidence: "置信度",
+    conclusion: "结论",
+    aiEvidence: "AI 相关证据",
+    coreEvidence: "核心证据",
+    localDifference: "局部差异分析",
+    heatmap: "局部差异热图",
+    heatmapAlt: "ELA 热图",
+    expand: "展开解释",
+    means: "能说明什么",
+    doesNotMean: "不能说明什么",
+    technicalDetails: "技术细节",
+    reportNotes: "报告怎么读",
+  },
+  "en-US": {
+    subtitle: "Single-image evidence report",
+    themeAria: "Toggle dark mode",
+    lightTheme: "Light",
+    darkTheme: "Dark",
+    localeAria: "Switch language",
+    chooseFile: "Choose JPG, PNG, or WebP",
+    analyze: "Analyze",
+    analyzing: "Analyzing",
+    selectFirst: "Select an image before running analysis.",
+    analysisFailed: "Analysis failed.",
+    noImage: "No image selected",
+    reportEmpty: "Report will appear here",
+    file: "File",
+    type: "Type",
+    size: "Size",
+    unknown: "unknown",
+    confidence: "Confidence",
+    conclusion: "Conclusion",
+    aiEvidence: "AI-related evidence",
+    coreEvidence: "Core evidence",
+    localDifference: "Local difference analysis",
+    heatmap: "Local difference heatmap",
+    heatmapAlt: "ELA heatmap",
+    expand: "Expand explanation",
+    means: "What it can show",
+    doesNotMean: "What it cannot show",
+    technicalDetails: "Technical details",
+    reportNotes: "How to read this report",
+  },
+};
 
 function preferredTheme(): Theme {
   if (typeof window === "undefined") return "light";
   const savedTheme = window.localStorage.getItem("trustpic-theme");
   if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function preferredLocale(): Locale {
+  if (typeof window === "undefined") return defaultLocale();
+  const savedLocale = window.localStorage.getItem("trustpic-locale");
+  if (savedLocale === "zh-CN" || savedLocale === "en-US") return savedLocale;
+  return defaultLocale();
+}
+
+function defaultLocale(): Locale {
+  return import.meta.env.VITE_DEFAULT_LOCALE === "en-US" ? "en-US" : "zh-CN";
 }
 
 function App() {
@@ -67,11 +142,18 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [theme, setTheme] = useState<Theme>(preferredTheme);
+  const [locale, setLocale] = useState<Locale>(preferredLocale);
+  const copy = UI_COPY[locale];
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem("trustpic-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.lang = locale === "en-US" ? "en" : "zh-CN";
+    window.localStorage.setItem("trustpic-locale", locale);
+  }, [locale]);
 
   const coreEvidence = report?.interpretation.evidence_chain.filter((item) => item.key !== "ela") ?? [];
   const localDifference = report?.interpretation.evidence_chain.find((item) => item.key === "ela") ?? null;
@@ -90,7 +172,7 @@ function App() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!file) {
-      setError("Select an image before running analysis.");
+      setError(copy.selectFirst);
       return;
     }
 
@@ -100,7 +182,7 @@ function App() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE}/api/v1/analyze`, {
+      const response = await fetch(analyzeEndpoint(locale), {
         method: "POST",
         body: formData,
       });
@@ -113,10 +195,16 @@ function App() {
       setReport((await response.json()) as AnalyzeResponse);
     } catch (err) {
       setReport(null);
-      setError(err instanceof Error ? err.message : "Analysis failed.");
+      setError(err instanceof Error ? err.message : copy.analysisFailed);
     } finally {
       setLoading(false);
     }
+  }
+
+  function toggleLocale() {
+    setLocale((current) => (current === "en-US" ? "zh-CN" : "en-US"));
+    setReport(null);
+    setError(null);
   }
 
   return (
@@ -125,16 +213,19 @@ function App() {
         <header className="topbar">
           <div>
             <h1>TrustPic</h1>
-            <p>Single-image evidence report</p>
+            <p>{copy.subtitle}</p>
           </div>
           <div className="topbar-actions">
+            <button className="theme-toggle" type="button" aria-label={copy.localeAria} onClick={toggleLocale}>
+              {locale === "en-US" ? "中文" : "English"}
+            </button>
             <button
               className="theme-toggle"
               type="button"
-              aria-label="切换明暗模式"
+              aria-label={copy.themeAria}
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             >
-              {theme === "dark" ? "亮色" : "暗色"}
+              {theme === "dark" ? copy.lightTheme : copy.darkTheme}
             </button>
             <span className="status-pill">v0</span>
           </div>
@@ -147,10 +238,10 @@ function App() {
               accept="image/jpeg,image/png,image/webp"
               onChange={handleFileChange}
             />
-            <span>{file ? file.name : "Choose JPG, PNG, or WebP"}</span>
+            <span>{file ? file.name : copy.chooseFile}</span>
           </label>
           <button type="submit" disabled={loading || !file}>
-            {loading ? "Analyzing" : "Analyze"}
+            {loading ? copy.analyzing : copy.analyze}
           </button>
         </form>
 
@@ -164,22 +255,22 @@ function App() {
                 {file && (
                   <dl className="file-meta">
                     <div>
-                      <dt>File</dt>
+                      <dt>{copy.file}</dt>
                       <dd>{file.name}</dd>
                     </div>
                     <div>
-                      <dt>Type</dt>
-                      <dd>{file.type || "unknown"}</dd>
+                      <dt>{copy.type}</dt>
+                      <dd>{file.type || copy.unknown}</dd>
                     </div>
                     <div>
-                      <dt>Size</dt>
+                      <dt>{copy.size}</dt>
                       <dd>{formatBytes(file.size)}</dd>
                     </div>
                   </dl>
                 )}
               </div>
             ) : (
-              <div className="empty-state">No image selected</div>
+              <div className="empty-state">{copy.noImage}</div>
             )}
           </div>
 
@@ -188,30 +279,31 @@ function App() {
               <>
                 <section className="interpretation">
                   <div className="confidence-card">
-                    <span>置信度</span>
+                    <span>{copy.confidence}</span>
                     <strong>{report.interpretation.confidence_label}</strong>
                   </div>
                   <div className="conclusion-card">
-                    <h2>结论</h2>
+                    <h2>{copy.conclusion}</h2>
                     <p>{report.interpretation.conclusion}</p>
                   </div>
                 </section>
 
-                {aiAlert && <AiAlert evidence={aiAlert} />}
+                {aiAlert && <AiAlert evidence={aiAlert} copy={copy} />}
 
-                <EvidenceChain evidence={coreEvidence} />
+                <EvidenceChain evidence={coreEvidence} copy={copy} />
 
                 {localDifference && (
                   <LocalDifferenceSection
                     evidence={localDifference}
                     heatmapUrl={report.assets.ela_heatmap_data_url}
+                    copy={copy}
                   />
                 )}
 
-                <ReportNotes limits={report.interpretation.limits} />
+                <ReportNotes limits={report.interpretation.limits} copy={copy} />
               </>
             ) : (
-              <div className="empty-state">Report will appear here</div>
+              <div className="empty-state">{copy.reportEmpty}</div>
             )}
           </div>
         </section>
@@ -220,11 +312,11 @@ function App() {
   );
 }
 
-function AiAlert({ evidence }: { evidence: InterpretationEvidence }) {
+function AiAlert({ evidence, copy }: { evidence: InterpretationEvidence; copy: Record<string, string> }) {
   return (
     <section className="ai-alert">
       <div>
-        <span>AI 相关证据</span>
+        <span>{copy.aiEvidence}</span>
         <strong>{evidence.summary}</strong>
       </div>
       <p>{evidence.means}</p>
@@ -232,13 +324,19 @@ function AiAlert({ evidence }: { evidence: InterpretationEvidence }) {
   );
 }
 
-function EvidenceChain({ evidence }: { evidence: InterpretationEvidence[] }) {
+function EvidenceChain({
+  evidence,
+  copy,
+}: {
+  evidence: InterpretationEvidence[];
+  copy: Record<string, string>;
+}) {
   return (
     <section className="evidence-chain">
-      <h2>核心证据</h2>
+      <h2>{copy.coreEvidence}</h2>
       <div className="evidence-list">
         {evidence.map((item) => (
-          <EvidenceArticle item={item} key={item.key} />
+          <EvidenceArticle item={item} key={item.key} copy={copy} />
         ))}
       </div>
     </section>
@@ -248,25 +346,27 @@ function EvidenceChain({ evidence }: { evidence: InterpretationEvidence[] }) {
 function LocalDifferenceSection({
   evidence,
   heatmapUrl,
+  copy,
 }: {
   evidence: InterpretationEvidence;
   heatmapUrl: string | null;
+  copy: Record<string, string>;
 }) {
   return (
     <section className="local-difference-section">
-      <h2>局部差异分析</h2>
-      <EvidenceArticle item={evidence} />
+      <h2>{copy.localDifference}</h2>
+      <EvidenceArticle item={evidence} copy={copy} />
       {heatmapUrl && (
         <div className="heatmap">
-          <h3>局部差异热图</h3>
-          <img src={heatmapUrl} alt="ELA heatmap" />
+          <h3>{copy.heatmap}</h3>
+          <img src={heatmapUrl} alt={copy.heatmapAlt} />
         </div>
       )}
     </section>
   );
 }
 
-function EvidenceArticle({ item }: { item: InterpretationEvidence }) {
+function EvidenceArticle({ item, copy }: { item: InterpretationEvidence; copy: Record<string, string> }) {
   return (
     <article className={`evidence-card evidence-${item.key}`}>
       <header>
@@ -279,20 +379,20 @@ function EvidenceArticle({ item }: { item: InterpretationEvidence }) {
         </span>
       </header>
       <details className="evidence-details">
-        <summary>展开解释</summary>
+        <summary>{copy.expand}</summary>
         <div className="explain-grid">
           <div>
-            <h4>能说明什么</h4>
+            <h4>{copy.means}</h4>
             <p>{item.means}</p>
           </div>
           <div>
-            <h4>不能说明什么</h4>
+            <h4>{copy.doesNotMean}</h4>
             <p>{item.does_not_mean}</p>
           </div>
         </div>
         {Object.keys(item.details).length > 0 && (
           <details className="technical-details">
-            <summary>技术细节</summary>
+            <summary>{copy.technicalDetails}</summary>
             <pre>{JSON.stringify(item.details, null, 2)}</pre>
           </details>
         )}
@@ -301,10 +401,10 @@ function EvidenceArticle({ item }: { item: InterpretationEvidence }) {
   );
 }
 
-function ReportNotes({ limits }: { limits: string[] }) {
+function ReportNotes({ limits, copy }: { limits: string[]; copy: Record<string, string> }) {
   return (
     <section className="report-notes">
-      <h2>报告怎么读</h2>
+      <h2>{copy.reportNotes}</h2>
       <ul>
         {limits.map((item) => (
           <li key={item}>{item}</li>
@@ -315,17 +415,14 @@ function ReportNotes({ limits }: { limits: string[] }) {
 }
 
 function statusClass(status: InterpretationEvidence["status_label"]) {
-  const classes: Record<InterpretationEvidence["status_label"], string> = {
-    支持证据: "status-support",
-    需留意: "status-warning",
-    未发现: "status-neutral",
-    无法分析: "status-unavailable",
-  };
-  return classes[status];
+  if (status === "支持证据" || status === "Supporting evidence") return "status-support";
+  if (status === "需留意" || status === "Needs attention") return "status-warning";
+  if (status === "无法分析" || status === "Not analyzed") return "status-unavailable";
+  return "status-neutral";
 }
 
 function aiStrongAlert(evidence: InterpretationEvidence[]) {
-  const aiMarker = evidence.find((item) => item.key === "gb45438" && item.status_label === "支持证据");
+  const aiMarker = evidence.find((item) => item.key === "gb45438" && isSupportingEvidence(item.status_label));
   if (aiMarker) return aiMarker;
 
   const sourceRecord = evidence.find((item) => item.key === "c2pa");
@@ -347,6 +444,15 @@ function aiStrongAlert(evidence: InterpretationEvidence[]) {
 
   const terms = ["openai", "dall-e", "dalle", "gemini", "notebooklm", "imagen", "synthid", "nano banana"];
   return terms.some((term) => text.includes(term)) ? sourceRecord : null;
+}
+
+function isSupportingEvidence(status: string) {
+  return status === "支持证据" || status === "Supporting evidence";
+}
+
+function analyzeEndpoint(locale: Locale) {
+  const base = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
+  return `${base}/api/v1/analyze?locale=${encodeURIComponent(locale)}`;
 }
 
 function formatBytes(bytes: number) {

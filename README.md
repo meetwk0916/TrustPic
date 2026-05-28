@@ -50,3 +50,4 @@ Open `http://127.0.0.1:5173`.
 - `POST /api/v1/analyze`
 
 `POST /api/v1/analyze` accepts one `multipart/form-data` file field named `file`.
+It also accepts optional `locale=zh-CN` or `locale=en-US` to localize the user-facing report interpretation.

@@ -1,6 +1,6 @@
 # TrustPic v0 Release Checklist
 
-Last aligned: 2026-05-27
+Last aligned: 2026-05-28
 
 ## Status
 
@@ -9,8 +9,9 @@ v0 is runnable and usable as a single-image evidence report prototype. The curre
 ## Completed
 
 - Backend API: `GET /api/v1/health`, `POST /api/v1/analyze`.
-- Web UI: upload, preview, conclusion, confidence, AI alert, core evidence, local-difference module, report-reading notes, dark mode.
+- Web UI: upload, preview, conclusion, confidence, AI alert, core evidence, local-difference module, report-reading notes, dark mode, and Chinese/English switching.
 - Report contract: `interpretation` is the user-facing contract.
+- Bilingual report interpretation: `POST /api/v1/analyze` accepts `locale=zh-CN` or `locale=en-US`; unsupported locales fall back to Chinese.
 - AI evidence:
   - GB45438/TC260/AIGC metadata and byte marker scan.
   - C2PA source record parsing.
@@ -32,7 +33,7 @@ cd backend
 .venv/bin/python -m pytest
 ```
 
-Result: `46 passed`.
+Result: `48 passed`.
 
 ```bash
 cd web

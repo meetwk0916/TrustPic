@@ -82,11 +82,14 @@ Set:
 
 ```bash
 VITE_API_BASE=https://api.trustpic.example.com
+VITE_DEFAULT_LOCALE=en-US
 ```
 
 See `web/.env.example`.
 
 Then rebuild the Pages deployment.
+
+`VITE_DEFAULT_LOCALE=en-US` makes the overseas Web app open in English by default. Users can still switch between English and Chinese in the UI; the frontend passes `locale=en-US` or `locale=zh-CN` to `POST /api/v1/analyze`, and the backend returns localized report interpretation text from the same evidence logic.
 
 ## Domains
 

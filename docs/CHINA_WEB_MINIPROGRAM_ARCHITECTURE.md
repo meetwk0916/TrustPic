@@ -73,6 +73,8 @@ TRUSTPIC_MAX_UPLOAD_MB=15
 TRUSTPIC_MAX_PIXELS=40000000
 ```
 
+Domestic Web should build with `VITE_DEFAULT_LOCALE=zh-CN`. Mini Program clients should call the shared API with `locale=zh-CN` unless a bilingual UI is explicitly enabled.
+
 If Mini Program uploads hit the API directly, configure the Mini Program request/upload legal domain to the API domain and keep it HTTPS.
 
 ## Domain Plan

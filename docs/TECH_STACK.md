@@ -41,6 +41,7 @@ If Mini Program becomes the primary distribution channel earlier than expected, 
   - EXIF summary
   - ELA metric and heatmap
 - Return evidence-first JSON.
+- Build localized user-facing `interpretation` text from the same evidence signals. v0 supports `locale=zh-CN` and `locale=en-US`.
 - Serve generated heatmap as an in-memory response or short-lived derived asset.
 
 ### Backend Non-Goals For v0
@@ -86,6 +87,8 @@ Initial endpoints:
 
 - `GET /api/v1/health`
 - `POST /api/v1/analyze`
+
+`POST /api/v1/analyze` accepts an optional `locale` query parameter. The backend falls back to Chinese for unsupported locales. The evidence schema stays the same; only user-facing labels, conclusions, evidence explanations, and boundary notes are localized.
 
 Possible later endpoint:
 

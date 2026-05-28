@@ -1,6 +1,6 @@
 import os
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.models import AnalyzeResponse
@@ -33,8 +33,8 @@ async def health() -> dict[str, str]:
 
 
 @app.post("/api/v1/analyze", response_model=AnalyzeResponse)
-async def analyze_image(file: UploadFile = File(...)) -> AnalyzeResponse:
+async def analyze_image(file: UploadFile = File(...), locale: str = Query("zh-CN")) -> AnalyzeResponse:
     try:
-        return await analyze_upload(file)
+        return await analyze_upload(file, locale=locale)
     except AnalyzeError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc

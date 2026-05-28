@@ -33,7 +33,7 @@ class ReportAssets(BaseModel):
 class InterpretationEvidence(BaseModel):
     key: Literal["gb45438", "ela", "c2pa", "exif"]
     title: str
-    status_label: Literal["支持证据", "需留意", "未发现", "无法分析"]
+    status_label: str
     summary: str
     means: str
     does_not_mean: str
@@ -41,7 +41,7 @@ class InterpretationEvidence(BaseModel):
 
 
 class ReportInterpretation(BaseModel):
-    confidence_label: Literal["强", "较强", "中等", "有限"]
+    confidence_label: str
     conclusion: str
     evidence_chain: list[InterpretationEvidence]
     limits: list[str]
