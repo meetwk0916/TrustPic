@@ -11,8 +11,7 @@
 }
 
 body {
-  width: 420px;
-  min-height: 520px;
+  min-width: 320px;
   margin: 0;
   background: #f5f7fb;
 }
@@ -30,7 +29,7 @@ input {
 
 .topbar {
   display: flex;
-  align-items: center;
+  align-items: start;
   justify-content: space-between;
   gap: 12px;
 }
@@ -58,24 +57,25 @@ h2 {
   font-size: 12px;
 }
 
-.ghost-button,
-.input-panel button {
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  background: #fff;
-  color: #1f2937;
-  cursor: pointer;
+.locale-badge,
+.status,
+.confidence-pill {
+  border-radius: 999px;
+  white-space: nowrap;
+  font-weight: 800;
 }
 
-.ghost-button {
-  min-width: 84px;
-  padding: 7px 10px;
+.locale-badge {
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 5px 8px;
+  font-size: 11px;
 }
 
 .settings,
 .input-panel,
-.report,
-.preview-section {
+.source-section,
+.report {
   border: 1px solid #d8e0ec;
   border-radius: 8px;
   background: #fff;
@@ -89,10 +89,14 @@ h2 {
   padding: 10px;
 }
 
-.settings label {
+.settings label,
+.source-section span,
+.conclusion-card span,
+.ai-alert span {
   color: #667085;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 input[type="url"] {
@@ -114,7 +118,6 @@ input[type="url"] {
 .primary-hint {
   border: 1px dashed #94a3b8;
   border-radius: 8px;
-  margin: 0;
   padding: 10px;
   background: #f8fafc;
   color: #475569;
@@ -129,8 +132,12 @@ input[type="url"] {
 }
 
 .url-row button {
-  min-width: 84px;
-  padding: 0 12px;
+  min-width: 72px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2937;
+  cursor: pointer;
   font-weight: 700;
 }
 
@@ -140,35 +147,17 @@ input[type="url"] {
   background: #fff7ed;
   color: #9a3412;
   font-size: 13px;
+  line-height: 1.45;
 }
 
-.preview-section,
-.source-section {
-  overflow: hidden;
-}
-
-.preview-section img {
-  display: block;
-  width: 100%;
-  max-height: 220px;
-  object-fit: contain;
-  background: #111827;
+.notice:empty {
+  display: none;
 }
 
 .source-section {
   display: grid;
   gap: 4px;
-  border: 1px solid #d8e0ec;
-  border-radius: 8px;
-  background: #fff;
   padding: 10px;
-}
-
-.source-section span {
-  color: #64748b;
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
 }
 
 .source-section a {
@@ -185,14 +174,7 @@ input[type="url"] {
   padding: 12px;
 }
 
-.summary-grid {
-  display: grid;
-  grid-template-columns: 104px 1fr;
-  gap: 10px;
-}
-
-.confidence,
-.conclusion,
+.conclusion-card,
 .ai-alert,
 .evidence-card,
 .notes,
@@ -202,32 +184,25 @@ input[type="url"] {
   background: #f8fafc;
 }
 
-.confidence,
-.conclusion {
-  padding: 10px;
+.conclusion-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+  padding: 12px;
 }
 
-.confidence span,
-.conclusion span,
-.ai-alert span {
-  display: block;
-  color: #64748b;
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.confidence strong {
-  display: block;
+.conclusion-card p {
   margin-top: 6px;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.confidence-pill {
+  background: #dbeafe;
   color: #1d4ed8;
-  font-size: 20px;
-}
-
-.conclusion p {
-  margin-top: 6px;
-  font-size: 14px;
-  line-height: 1.5;
+  padding: 7px 10px;
+  font-size: 13px;
 }
 
 .ai-alert {
@@ -278,11 +253,8 @@ input[type="url"] {
 }
 
 .status {
-  border-radius: 999px;
   padding: 4px 8px;
-  white-space: nowrap;
   font-size: 11px;
-  font-weight: 800;
 }
 
 .status-support {
@@ -335,7 +307,8 @@ summary {
   line-height: 1.45;
 }
 
-.heatmap-section {
+.heatmap-section,
+.notes {
   padding: 10px;
 }
 
@@ -344,10 +317,6 @@ summary {
   width: 100%;
   border-radius: 6px;
   background: #111827;
-}
-
-.notes {
-  padding: 10px;
 }
 
 .notes ul {
@@ -366,10 +335,9 @@ summary {
 
   .settings,
   .input-panel,
+  .source-section,
   .report,
-  .preview-section,
-  .ghost-button,
-  .input-panel button,
+  .url-row button,
   input[type="url"] {
     border-color: #344054;
     background: #182230;
@@ -377,8 +345,7 @@ summary {
   }
 
   .primary-hint,
-  .confidence,
-  .conclusion,
+  .conclusion-card,
   .evidence-card,
   .notes,
   .heatmap-section {
@@ -386,15 +353,10 @@ summary {
     background: #111827;
   }
 
-  .source-section {
-    border-color: #344054;
-    background: #182230;
-  }
-
   .topbar p,
   .settings label,
-  .confidence span,
-  .conclusion span,
+  .source-section span,
+  .conclusion-card span,
   .ai-alert span,
   .summary,
   .detail-grid p,

@@ -4,16 +4,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>TrustPic</title>
-    <link rel="stylesheet" href="popup.css" />
+    <link rel="stylesheet" href="sidepanel.css" />
   </head>
   <body>
     <main class="shell">
       <header class="topbar">
         <div>
           <h1>TrustPic</h1>
-          <p id="subtitle">单图证据报告</p>
+          <p id="subtitle">右键图片证据报告</p>
         </div>
-        <button id="localeButton" class="ghost-button" type="button">English</button>
+        <span id="localeBadge" class="locale-badge">zh-CN</span>
       </header>
 
       <section class="settings">
@@ -25,15 +25,11 @@
         <p id="primaryHint" class="primary-hint">在网页图片上右键，选择 Analyze image with TrustPic。</p>
         <div class="url-row">
           <input id="imageUrl" type="url" placeholder="图片 URL" />
-          <button id="urlButton" type="button">分析 URL</button>
+          <button id="urlButton" type="button">分析</button>
         </div>
       </section>
 
-      <div id="notice" class="notice" hidden></div>
-
-      <section id="previewSection" class="preview-section" hidden>
-        <img id="preview" alt="Selected image preview" />
-      </section>
+      <div id="notice" class="notice"></div>
 
       <section id="sourceSection" class="source-section" hidden>
         <span id="sourceLabel">图片来源</span>
@@ -41,16 +37,13 @@
       </section>
 
       <section id="report" class="report" hidden>
-        <div class="summary-grid">
-          <div class="confidence">
-            <span id="confidenceLabel">置信度</span>
-            <strong id="confidenceValue"></strong>
-          </div>
-          <div class="conclusion">
+        <section class="conclusion-card">
+          <div>
             <span id="conclusionLabel">结论</span>
             <p id="conclusionText"></p>
           </div>
-        </div>
+          <strong id="confidenceValue" class="confidence-pill"></strong>
+        </section>
 
         <section id="aiAlert" class="ai-alert" hidden>
           <span id="aiAlertLabel">AI 相关证据</span>
@@ -100,6 +93,6 @@
       </article>
     </template>
 
-    <script src="popup.js"></script>
+    <script src="sidepanel.js"></script>
   </body>
 </html>
