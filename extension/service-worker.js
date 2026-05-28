@@ -1,6 +1,5 @@
 const MENU_ID = "trustpic-analyze-image";
 const DEFAULT_API_BASE = "http://127.0.0.1:8000";
-const contextTargets = new Map();
 
 installContextMenus();
 
@@ -15,20 +14,12 @@ chrome.runtime.onStartup.addListener(() => {
   installContextMenus();
 });
 
-chrome.contextMenus.onShown.addListener((info, tab) => {
-  updateContextMenu(Boolean(sourceUrlFromContext(info, tab)));
-});
-
-chrome.contextMenus.onHidden.addListener(() => {
-  updateContextMenu(false);
-});
-
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== MENU_ID) return;
 
   openReportPanel(tab);
 
-  const sourceUrl = sourceUrlFromContext(info, tab);
+  const sourceUrl = info.srcUrl;
   if (!sourceUrl) return;
   await chrome.storage.local.set({
     activeAnalysis: {
@@ -78,45 +69,15 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message, sender) => {
-  if (message?.type !== "trustpic-context-target") return;
-
-  const tabId = sender.tab?.id;
-  if (!tabId) return;
-
-  const imageUrl = normalizedContextImageUrl(message.imageUrl);
-  contextTargets.set(tabId, {
-    imageUrl,
-    pageUrl: message.pageUrl || sender.tab?.url || "",
-    at: Date.now(),
-  });
-  updateContextMenu(Boolean(imageUrl));
-});
-
 function installContextMenus() {
   const copy = menuCopy();
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: MENU_ID,
       title: copy.analyze,
-      contexts: ["all"],
-      visible: false,
+      contexts: ["image"],
     });
   });
-}
-
-function updateContextMenu(visible) {
-  chrome.contextMenus.update(
-    MENU_ID,
-    {
-      title: menuCopy().analyze,
-      visible,
-    },
-    () => {
-      if (chrome.runtime.lastError) return;
-      chrome.contextMenus.refresh?.();
-    },
-  );
 }
 
 function openReportPanel(tab) {
@@ -176,24 +137,6 @@ async function analyzeImageUrl({ sourceUrl, apiBase, locale }) {
 function analyzeEndpoint(apiBase, locale) {
   const base = String(apiBase || DEFAULT_API_BASE).replace(/\/+$/, "");
   return `${base}/api/v1/analyze?locale=${encodeURIComponent(locale || "zh-CN")}`;
-}
-
-function sourceUrlFromContext(info, tab) {
-  if (info.srcUrl) return info.srcUrl;
-
-  const target = tab?.id ? contextTargets.get(tab.id) : null;
-  if (target?.imageUrl && Date.now() - target.at < 5000) {
-    return target.imageUrl;
-  }
-
-  return null;
-}
-
-function normalizedContextImageUrl(value) {
-  if (!value) return null;
-  const text = String(value);
-  if (text.startsWith("http://") || text.startsWith("https://") || text.startsWith("data:image/")) return text;
-  return null;
 }
 
 function browserLocale() {
