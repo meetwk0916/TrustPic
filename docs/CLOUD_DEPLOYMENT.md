@@ -1,17 +1,25 @@
 # TrustPic Overseas Cloud Deployment
 
-Last aligned: 2026-05-27
+Last aligned: 2026-05-28
 
 This is the recommended v0 overseas deployment shape. TrustPic v0 analyzes one uploaded image in request scope and does not persist originals, reports, users, or jobs.
 
 ## Recommended Stack
 
 - Web: Cloudflare Pages.
-- API: Render Web Service or Fly.io container app.
+- API: containerized FastAPI service.
+  - Recommended first deployment: Render Web Service or Fly.io container app behind `api.trustpic.example.com`.
+  - Cloudflare-only path: Cloudflare Containers fronted by a Worker, once we are ready to operate that beta-style path.
 - Database: none for v0.
 - Object storage: none for v0.
 - Queue/Redis: none for v0.
 - GPU: none for v0.
+
+## Why The API Is Not A Plain Worker
+
+Cloudflare Pages is a good fit for the React/Vite Web app. The API is different: TrustPic depends on Python image-processing libraries such as Pillow and `c2pa-python`, and it performs request-time image decoding plus ELA. Plain Workers, including Python Workers, are not the conservative v0 target for this workload because native/package/runtime compatibility is the main deployment risk.
+
+Use the existing Docker backend first. If we want an all-Cloudflare stack later, move that Docker image into Cloudflare Containers instead of rewriting the evidence engine for Workers.
 
 ## Sizing
 
@@ -77,6 +85,7 @@ Create a Pages project from the repository with:
 - Root directory: `web`.
 - Build command: `npm run build`.
 - Build output directory: `dist`.
+- Node version: `22` via `web/.node-version`.
 
 Set:
 
@@ -100,6 +109,25 @@ Recommended:
 
 Both must use HTTPS.
 
+Cloudflare DNS:
+
+- `trustpic.example.com`: attach as the custom domain on the Pages project.
+- `api.trustpic.example.com`: CNAME to the backend host if using Render/Fly, or route to the Worker if using Cloudflare Containers.
+
+After the frontend domain is final, update the backend:
+
+```bash
+TRUSTPIC_ALLOWED_ORIGINS=https://trustpic.example.com,https://www.trustpic.example.com
+```
+
+After the backend domain is final, update Pages:
+
+```bash
+VITE_API_BASE=https://api.trustpic.example.com
+```
+
+Then redeploy both sides.
+
 ## Edge And API Limits
 
 Set these limits at the hosting or reverse-proxy layer:
@@ -109,6 +137,34 @@ Set these limits at the hosting or reverse-proxy layer:
 - Basic rate limit: 10-30 analyze requests per IP per minute.
 
 Do not log image bytes, base64 heatmaps, or full private EXIF fields in production logs.
+
+## Cloudflare Settings
+
+Recommended first pass:
+
+- Turn on HTTPS redirects for the zone.
+- Add a WAF/rate limiting rule for `POST /api/v1/analyze`.
+- Start with 10 requests per IP per minute if the demo is public.
+- Keep Cloudflare cache disabled for `/api/*`.
+- Do not cache uploaded image requests or API responses.
+
+The Web app can be cached normally as static assets. `web/public/_headers` adds conservative browser security headers to Pages output.
+
+## Deployment Order
+
+1. Deploy backend container and verify:
+
+```bash
+curl https://api.trustpic.example.com/api/v1/health
+```
+
+2. Set backend `TRUSTPIC_ALLOWED_ORIGINS` to the Cloudflare Pages preview URL while testing.
+3. Create Cloudflare Pages project from `web`.
+4. Set Pages `VITE_API_BASE` to the backend URL and `VITE_DEFAULT_LOCALE=en-US`.
+5. Deploy Pages and test a real image upload.
+6. Attach final custom domains.
+7. Replace preview origins in `TRUSTPIC_ALLOWED_ORIGINS` with the final domain list.
+8. Re-test Web upload, Chrome extension API base, and `/api/v1/health`.
 
 ## Not Needed In v0
 
