@@ -15,7 +15,8 @@ The Chrome extension is a self-use right-click client for the existing TrustPic 
 - Side Panel supports:
   - API base URL setting
   - language selected automatically from the browser UI language
-  - conclusion, confidence, AI evidence alert, core evidence, boundary notes, and heatmap display
+  - conclusion, confidence, AI evidence alert, core evidence, local difference analysis, boundary notes, and heatmap display
+  - expandable evidence explanations and technical details, aligned with the Web report structure
   - image URL fallback when right-click extraction is not available
 
 ## Run The API

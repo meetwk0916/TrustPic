@@ -37,12 +37,15 @@
       </section>
 
       <section id="report" class="report" hidden>
-        <section class="conclusion-card">
-          <div>
-            <span id="conclusionLabel">结论</span>
+        <section class="interpretation">
+          <section class="confidence-card">
+            <span id="confidenceLabel">置信度</span>
+            <strong id="confidenceValue"></strong>
+          </section>
+          <section class="conclusion-card">
+            <h2 id="conclusionLabel">结论</h2>
             <p id="conclusionText"></p>
-          </div>
-          <strong id="confidenceValue" class="confidence-pill"></strong>
+          </section>
         </section>
 
         <section id="aiAlert" class="ai-alert" hidden>
@@ -56,9 +59,13 @@
           <div id="evidenceList" class="evidence-list"></div>
         </section>
 
-        <section id="heatmapSection" class="heatmap-section" hidden>
-          <h2 id="heatmapLabel">局部差异热图</h2>
-          <img id="heatmap" alt="ELA heatmap" />
+        <section id="localDifferenceSection" class="local-difference-section" hidden>
+          <h2 id="localDifferenceLabel">局部差异分析</h2>
+          <div id="localDifferenceEvidence" class="evidence-list"></div>
+          <div id="heatmapPanel" class="heatmap" hidden>
+            <h3 id="heatmapLabel">局部差异热图</h3>
+            <img id="heatmap" alt="ELA heatmap" />
+          </div>
         </section>
 
         <section class="notes">
@@ -79,7 +86,7 @@
         </header>
         <details>
           <summary class="expand-label">展开解释</summary>
-          <div class="detail-grid">
+          <div class="explain-grid">
             <div>
               <h4 class="means-label">能说明什么</h4>
               <p class="means"></p>
@@ -89,6 +96,10 @@
               <p class="does-not"></p>
             </div>
           </div>
+          <details class="technical-details" hidden>
+            <summary class="technical-label">技术细节</summary>
+            <pre></pre>
+          </details>
         </details>
       </article>
     </template>

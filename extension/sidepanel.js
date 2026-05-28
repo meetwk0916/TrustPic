@@ -7,14 +7,18 @@ const COPY = {
     analyzeUrl: "分析",
     urlPlaceholder: "图片 URL",
     source: "图片来源",
+    confidence: "置信度",
     conclusion: "结论",
     aiEvidence: "AI 相关证据",
     coreEvidence: "核心证据",
+    localDifference: "局部差异分析",
     heatmap: "局部差异热图",
+    heatmapAlt: "ELA 热图",
     notes: "报告怎么读",
     expand: "展开解释",
     means: "能说明什么",
     doesNotMean: "不能说明什么",
+    technicalDetails: "技术细节",
     waiting: "等待右键图片，或粘贴图片 URL。",
     loading: "分析中...",
     fetching: "正在读取图片 URL...",
@@ -28,14 +32,18 @@ const COPY = {
     analyzeUrl: "Analyze",
     urlPlaceholder: "Image URL",
     source: "Image source",
+    confidence: "Confidence",
     conclusion: "Conclusion",
     aiEvidence: "AI-related evidence",
     coreEvidence: "Core evidence",
+    localDifference: "Local difference analysis",
     heatmap: "Local difference heatmap",
+    heatmapAlt: "ELA heatmap",
     notes: "How to read this report",
     expand: "Expand explanation",
     means: "What it can show",
     doesNotMean: "What it cannot show",
+    technicalDetails: "Technical details",
     waiting: "Right-click an image, or paste an image URL.",
     loading: "Analyzing...",
     fetching: "Fetching image URL...",
@@ -64,7 +72,9 @@ const elements = {
   aiAlert: document.getElementById("aiAlert"),
   aiAlertSummary: document.getElementById("aiAlertSummary"),
   aiAlertMeans: document.getElementById("aiAlertMeans"),
-  heatmapSection: document.getElementById("heatmapSection"),
+  localDifferenceSection: document.getElementById("localDifferenceSection"),
+  localDifferenceEvidence: document.getElementById("localDifferenceEvidence"),
+  heatmapPanel: document.getElementById("heatmapPanel"),
   heatmap: document.getElementById("heatmap"),
   limits: document.getElementById("limits"),
   template: document.getElementById("evidenceTemplate"),
@@ -111,10 +121,13 @@ function applyCopy() {
   document.getElementById("urlButton").textContent = copy.analyzeUrl;
   document.getElementById("imageUrl").placeholder = copy.urlPlaceholder;
   document.getElementById("sourceLabel").textContent = copy.source;
+  document.getElementById("confidenceLabel").textContent = copy.confidence;
   document.getElementById("conclusionLabel").textContent = copy.conclusion;
   document.getElementById("aiAlertLabel").textContent = copy.aiEvidence;
   document.getElementById("coreEvidenceLabel").textContent = copy.coreEvidence;
+  document.getElementById("localDifferenceLabel").textContent = copy.localDifference;
   document.getElementById("heatmapLabel").textContent = copy.heatmap;
+  document.getElementById("heatmap").alt = copy.heatmapAlt;
   document.getElementById("notesLabel").textContent = copy.notes;
   document.getElementById("localeBadge").textContent = state.locale;
 }
@@ -226,9 +239,11 @@ function renderReport(report) {
   elements.conclusionText.textContent = report.interpretation.conclusion;
 
   const evidence = report.interpretation.evidence_chain || [];
+  const coreEvidence = evidence.filter((item) => item.key !== "ela");
+  const localDifference = evidence.find((item) => item.key === "ela") || null;
   renderAiAlert(evidence);
-  renderEvidence(evidence.filter((item) => item.key !== "ela"));
-  renderHeatmap(report.assets?.ela_heatmap_data_url);
+  renderEvidence(coreEvidence, elements.evidenceList);
+  renderLocalDifference(localDifference, report.assets?.ela_heatmap_data_url);
   renderLimits(report.interpretation.limits || []);
 }
 
@@ -243,8 +258,8 @@ function renderAiAlert(evidence) {
   elements.aiAlertMeans.textContent = alert.means;
 }
 
-function renderEvidence(evidence) {
-  elements.evidenceList.replaceChildren();
+function renderEvidence(evidence, container) {
+  container.replaceChildren();
   for (const item of evidence) {
     const node = elements.template.content.firstElementChild.cloneNode(true);
     node.classList.add(`evidence-${item.key}`);
@@ -253,22 +268,39 @@ function renderEvidence(evidence) {
     const status = node.querySelector(".status");
     status.textContent = item.status_label;
     status.classList.add(statusClass(item.status_label));
+    status.classList.add(`signal-${item.key}`);
     node.querySelector(".expand-label").textContent = COPY[state.locale].expand;
     node.querySelector(".means-label").textContent = COPY[state.locale].means;
     node.querySelector(".does-not-label").textContent = COPY[state.locale].doesNotMean;
     node.querySelector(".means").textContent = item.means;
     node.querySelector(".does-not").textContent = item.does_not_mean;
-    elements.evidenceList.append(node);
+    const technicalDetails = node.querySelector(".technical-details");
+    const technicalPre = technicalDetails.querySelector("pre");
+    if (item.details && Object.keys(item.details).length > 0) {
+      technicalDetails.hidden = false;
+      node.querySelector(".technical-label").textContent = COPY[state.locale].technicalDetails;
+      technicalPre.textContent = JSON.stringify(item.details, null, 2);
+    }
+    container.append(node);
   }
 }
 
-function renderHeatmap(dataUrl) {
-  if (!dataUrl) {
-    elements.heatmapSection.hidden = true;
+function renderLocalDifference(evidence, heatmapUrl) {
+  if (!evidence && !heatmapUrl) {
+    elements.localDifferenceSection.hidden = true;
     return;
   }
-  elements.heatmapSection.hidden = false;
-  elements.heatmap.src = dataUrl;
+
+  elements.localDifferenceSection.hidden = false;
+  renderEvidence(evidence ? [evidence] : [], elements.localDifferenceEvidence);
+
+  if (!heatmapUrl) {
+    elements.heatmapPanel.hidden = true;
+    elements.heatmap.removeAttribute("src");
+    return;
+  }
+  elements.heatmapPanel.hidden = false;
+  elements.heatmap.src = heatmapUrl;
 }
 
 function renderLimits(limits) {
