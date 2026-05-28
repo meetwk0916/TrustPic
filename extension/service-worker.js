@@ -1,6 +1,7 @@
 const MENU_ID = "trustpic-analyze-image";
-const PAGE_MENU_ID = "trustpic-analyze-page-image";
 const DEFAULT_API_BASE = "http://127.0.0.1:8000";
+
+installContextMenus();
 
 chrome.runtime.onInstalled.addListener(() => {
   installContextMenus();
@@ -14,7 +15,9 @@ chrome.runtime.onStartup.addListener(() => {
 });
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (![MENU_ID, PAGE_MENU_ID].includes(info.menuItemId)) return;
+  if (info.menuItemId !== MENU_ID) return;
+
+  openReportPanel(tab);
 
   const sourceUrl = info.srcUrl || info.pageUrl;
   if (!sourceUrl) return;
@@ -31,8 +34,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
   chrome.action.setBadgeText({ text: "..." });
   chrome.action.setBadgeBackgroundColor({ color: "#d97706" });
-
-  await openReportPanel(tab);
 
   try {
     const settings = await chrome.storage.local.get(["apiBase"]);
@@ -73,32 +74,33 @@ function installContextMenus() {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: MENU_ID,
-      title: copy.image,
-      contexts: ["image"],
-    });
-    chrome.contextMenus.create({
-      id: PAGE_MENU_ID,
-      title: copy.page,
-      contexts: ["page"],
+      title: copy.analyze,
+      contexts: ["image", "page"],
     });
   });
 }
 
-async function openReportPanel(tab) {
+function openReportPanel(tab) {
   if (!chrome.sidePanel?.open) return;
 
-  if (tab?.id && chrome.sidePanel?.setOptions) {
-    await chrome.sidePanel.setOptions({
-      tabId: tab.id,
-      path: "sidepanel.html",
-      enabled: true,
-    }).catch(() => {});
-    const openedByTab = await chrome.sidePanel.open({ tabId: tab.id }).then(() => true).catch(() => false);
-    if (openedByTab) return;
+  if (tab?.id) {
+    chrome.sidePanel.open({ tabId: tab.id }).catch((error) => {
+      if (tab?.windowId) {
+        chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
+      }
+      chrome.storage.local.set({
+        lastError: error instanceof Error ? error.message : "Could not open TrustPic side panel.",
+      });
+    });
+    return;
   }
 
   if (tab?.windowId) {
-    await chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
+    chrome.sidePanel.open({ windowId: tab.windowId }).catch((error) => {
+      chrome.storage.local.set({
+        lastError: error instanceof Error ? error.message : "Could not open TrustPic side panel.",
+      });
+    });
   }
 }
 
@@ -138,20 +140,18 @@ function analyzeEndpoint(apiBase, locale) {
 }
 
 function browserLocale() {
-  const language = chrome.i18n?.getUILanguage?.() || "zh-CN";
-  return language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
+  const languages = [chrome.i18n?.getUILanguage?.(), navigator.language].filter(Boolean);
+  return languages.some((language) => String(language).toLowerCase().startsWith("zh")) ? "zh-CN" : "en-US";
 }
 
 function menuCopy() {
   if (browserLocale() === "zh-CN") {
     return {
-      image: "用 TrustPic 分析这张图片",
-      page: "用 TrustPic 分析当前图片页面",
+      analyze: "用 TrustPic 分析图片",
     };
   }
   return {
-    image: "Analyze image with TrustPic",
-    page: "Analyze current image page with TrustPic",
+    analyze: "Analyze image with TrustPic",
   };
 }
 
