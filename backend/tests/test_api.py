@@ -74,6 +74,27 @@ def test_analyze_png_returns_report_shape() -> None:
     assert payload["assets"]["ela_heatmap_data_url"].startswith("data:image/jpeg;base64,")
 
 
+def test_analyze_can_return_english_interpretation() -> None:
+    response = client.post(
+        "/api/v1/analyze?locale=en-US",
+        files={"file": ("sample.png", _png_bytes(), "image/png")},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["interpretation"]["confidence_label"] == "Limited"
+    assert payload["interpretation"]["conclusion"] == "No readable AI source, AI marker, or local-difference clue was found by TrustPic v0."
+    assert [item["title"] for item in payload["interpretation"]["evidence_chain"]] == [
+        "AI marker",
+        "Local difference clues",
+        "Source record",
+        "Photo/save metadata",
+    ]
+    source_record = payload["interpretation"]["evidence_chain"][2]
+    assert source_record["status_label"] == "Not found"
+    assert source_record["details"]["originality_label"] == "Limited originality evidence"
+
+
 def test_rejects_unsupported_file_type() -> None:
     response = client.post(
         "/api/v1/analyze",

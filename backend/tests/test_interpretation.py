@@ -40,6 +40,38 @@ def test_openai_c2pa_source_record_becomes_ai_source_conclusion() -> None:
     assert source_record.details["originality_label"] == "原始性较强"
 
 
+def test_openai_c2pa_source_record_can_render_english_interpretation() -> None:
+    signals = ReportSignals(
+        gb45438=_signal(details={"matched_terms": []}),
+        ela=_signal(status="ok", details={"mean_error": 0.4}),
+        c2pa=_signal(
+            status="detected",
+            detected=True,
+            details={
+                "signature_issuer": "OpenAI",
+                "signature_common_name": "OpenAI Image Signing",
+                "validation_state": "Valid",
+                "ai_related": True,
+            },
+        ),
+        exif=_signal(),
+    )
+
+    interpretation = build_interpretation(signals, locale="en-US")
+
+    assert interpretation.confidence_label == "Strong"
+    assert interpretation.conclusion == "The source record points to an AI generation source."
+    assert interpretation.evidence_chain[0].title == "AI marker"
+    assert interpretation.evidence_chain[0].status_label == "Not found"
+    source_record = interpretation.evidence_chain[2]
+    assert source_record.title == "Source record"
+    assert source_record.status_label == "Supporting evidence"
+    assert source_record.summary == "A verifiable AI-related source record was found. Current file: Strong originality evidence."
+    assert "OpenAI" in source_record.means
+    assert "File originality reading: Strong originality evidence" in source_record.means
+    assert source_record.details["originality_label"] == "Strong originality evidence"
+
+
 def test_notebooklm_google_c2pa_source_record_becomes_ai_source_conclusion() -> None:
     signals = ReportSignals(
         gb45438=_signal(details={"matched_terms": []}),

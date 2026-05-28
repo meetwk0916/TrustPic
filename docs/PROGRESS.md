@@ -1,6 +1,6 @@
 # TrustPic Progress
 
-Last aligned: 2026-05-27
+Last aligned: 2026-05-28
 
 ## Current State
 
@@ -13,6 +13,7 @@ The current implementation includes:
 - Evidence modules for C2PA read attempts, GB 45438/AIGC byte-marker scan, EXIF summary, and ELA heatmap generation.
 - Evidence-first report contract with verdict, summary, signals, human-readable `interpretation`, limitations, recommendation, and `assets.ela_heatmap_data_url`.
 - React + Vite Web UI for selecting an image, previewing it, showing file metadata, calling the backend, and displaying a user-readable conclusion, confidence label, ordered evidence chain, foldable evidence explanations, boundary notes, and ELA heatmap.
+- Web UI can switch between Chinese and English. The frontend passes `locale=zh-CN` or `locale=en-US` to the backend, and the backend generates localized `interpretation` wording from the same evidence signals.
 - AI-related C2PA source records, including OpenAI and explicit Google AI product records such as Gemini, NotebookLM, Imagen, SynthID, and Nano Banana, are interpreted as AI-related source evidence even when GB 45438/TC260 markers are absent.
 - `图片来源记录` now also carries file-originality reading in its visible summary and details (`originality_label` and `originality_reasons`) without adding a separate top-level report module.
 - ELA is now a tile-level local-difference signal. Ordinary global compression is ignored as a primary user-facing finding; `review` means a small set of local tiles stands out from the overall recompression pattern.
@@ -408,12 +409,34 @@ git diff --check
 
 Result: no whitespace errors.
 
+Validated after bilingual Chinese/English interpretation support was added:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `48 passed`.
+
+```bash
+cd web
+npm run build
+```
+
+Result: TypeScript build and Vite production build passed.
+
+```bash
+git diff --check
+```
+
+Result: no whitespace errors.
+
 ## Git And Index
 
 - Remote: `https://github.com/meetwk0916/TrustPic`
 - Branch: `main`
 - Initial commit: `dfb0104 Initial TrustPic v0 prototype`
-- CodeGraph status: up to date after dataset audit additions.
+- CodeGraph status: up to date after bilingual report interpretation additions.
 
 ## Not Blocked By API Quota
 

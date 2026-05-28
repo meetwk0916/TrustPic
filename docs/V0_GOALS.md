@@ -46,6 +46,7 @@ TrustPic v0 must not claim:
 - ELA heatmap generation and tile-level local-difference metrics.
 - Web UI that can upload one image and display the report.
 - Web UI that highlights strong AI-related evidence, separates core evidence from local-difference analysis, and supports light/dark mode.
+- Chinese and English report interpretation via `locale=zh-CN` or `locale=en-US` on `POST /api/v1/analyze`.
 - Local run command documented in the repository.
 
 ### Deferred
@@ -110,13 +111,13 @@ The v0 report uses evidence-first language. `interpretation` is the user-facing 
     }
   },
   "interpretation": {
-    "confidence_label": "强 | 较强 | 中等 | 有限",
+    "confidence_label": "强 | 较强 | 中等 | 有限, or localized equivalents such as Strong | Fairly strong | Moderate | Limited",
     "conclusion": "Human-readable conclusion",
     "evidence_chain": [
       {
         "key": "gb45438 | ela | c2pa | exif",
         "title": "AI 生成标记 | 局部差异线索 | 图片来源记录 | 拍摄/编辑信息",
-        "status_label": "支持证据 | 需留意 | 未发现 | 无法分析",
+        "status_label": "支持证据 | 需留意 | 未发现 | 无法分析, or localized equivalents such as Supporting evidence | Needs attention | Not found | Not analyzed",
         "summary": "Short user-facing evidence summary",
         "means": "What this evidence can support",
         "does_not_mean": "What this evidence cannot support",
@@ -157,6 +158,7 @@ v0 is done when:
 - A user can upload one image through the Web UI.
 - The UI shows the original image, conclusion, confidence, AI evidence alert when relevant, core evidence cards, local-difference analysis, report-reading notes, and ELA heatmap when available.
 - The API returns structured JSON that a future Mini Program can consume without special casing the Web UI.
+- The API can return Chinese or English user-facing interpretation text from the same evidence signals.
 - Invalid file type and oversized file cases return controlled errors.
 - Sample verification and first-phase suite checks cover:
   - normal camera image with EXIF

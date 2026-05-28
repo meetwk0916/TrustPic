@@ -26,7 +26,7 @@ class AnalyzeError(Exception):
         self.message = message
 
 
-async def analyze_upload(file: UploadFile) -> AnalyzeResponse:
+async def analyze_upload(file: UploadFile, locale: str = "zh-CN") -> AnalyzeResponse:
     if file.content_type not in SUPPORTED_MIME_TYPES:
         raise AnalyzeError(415, "Unsupported file type. Use JPG, PNG, or WebP.")
 
@@ -48,7 +48,7 @@ async def analyze_upload(file: UploadFile) -> AnalyzeResponse:
 
     signals = ReportSignals(c2pa=c2pa, gb45438=gb45438, exif=exif, ela=ela)
     verdict, summary, recommendation = _build_verdict(signals)
-    interpretation = build_interpretation(signals)
+    interpretation = build_interpretation(signals, locale=locale)
 
     limitations = [
         "No supported signal found does not prove the image is authentic.",
