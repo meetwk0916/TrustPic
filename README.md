@@ -18,6 +18,7 @@ The v0 goal is not to prove whether every image is real or AI-generated. The v0 
 - [report interpretation guide](docs/REPORT_INTERPRETATION_GUIDE.md)
 - [overseas cloud deployment](docs/CLOUD_DEPLOYMENT.md)
 - [China Web + Mini Program architecture](docs/CHINA_WEB_MINIPROGRAM_ARCHITECTURE.md)
+- [Chrome extension](docs/CHROME_EXTENSION.md)
 - [public dataset suite example](docs/public-dataset-suite.example.json)
 - [first-phase minimum coverage suite](docs/public-dataset-first-phase.example.json)
 - [v0 release coverage suite](docs/public-dataset-v0-release.example.json)
@@ -43,6 +44,15 @@ npm run dev
 ```
 
 Open `http://127.0.0.1:5173`.
+
+Chrome extension:
+
+```bash
+# Start the backend first, then load extension/ as an unpacked extension in Chrome.
+# Right-click a page image and choose "Analyze image with TrustPic".
+cd backend
+.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
 
 ## v0 API
 
