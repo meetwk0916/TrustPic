@@ -1,21 +1,23 @@
 const MENU_ID = "trustpic-analyze-image";
+const PAGE_MENU_ID = "trustpic-analyze-page-image";
 const DEFAULT_API_BASE = "http://127.0.0.1:8000";
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: MENU_ID,
-    title: "Analyze image with TrustPic",
-    contexts: ["image"],
-  });
+  installContextMenus();
   if (chrome.sidePanel?.setPanelBehavior) {
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
   }
 });
 
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (info.menuItemId !== MENU_ID || !info.srcUrl) return;
+chrome.runtime.onStartup.addListener(() => {
+  installContextMenus();
+});
 
-  const sourceUrl = info.srcUrl;
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (![MENU_ID, PAGE_MENU_ID].includes(info.menuItemId)) return;
+
+  const sourceUrl = info.srcUrl || info.pageUrl;
+  if (!sourceUrl) return;
   await chrome.storage.local.set({
     activeAnalysis: {
       status: "running",
@@ -30,9 +32,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   chrome.action.setBadgeText({ text: "..." });
   chrome.action.setBadgeBackgroundColor({ color: "#d97706" });
 
-  if (tab?.windowId && chrome.sidePanel?.open) {
-    await chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
-  }
+  await openReportPanel(tab);
 
   try {
     const settings = await chrome.storage.local.get(["apiBase"]);
@@ -67,6 +67,40 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     chrome.action.setBadgeBackgroundColor({ color: "#dc2626" });
   }
 });
+
+function installContextMenus() {
+  const copy = menuCopy();
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: MENU_ID,
+      title: copy.image,
+      contexts: ["image"],
+    });
+    chrome.contextMenus.create({
+      id: PAGE_MENU_ID,
+      title: copy.page,
+      contexts: ["page"],
+    });
+  });
+}
+
+async function openReportPanel(tab) {
+  if (!chrome.sidePanel?.open) return;
+
+  if (tab?.id && chrome.sidePanel?.setOptions) {
+    await chrome.sidePanel.setOptions({
+      tabId: tab.id,
+      path: "sidepanel.html",
+      enabled: true,
+    }).catch(() => {});
+    const openedByTab = await chrome.sidePanel.open({ tabId: tab.id }).then(() => true).catch(() => false);
+    if (openedByTab) return;
+  }
+
+  if (tab?.windowId) {
+    await chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
+  }
+}
 
 async function analyzeImageUrl({ sourceUrl, apiBase, locale }) {
   const imageResponse = await fetch(sourceUrl, {
@@ -106,6 +140,19 @@ function analyzeEndpoint(apiBase, locale) {
 function browserLocale() {
   const language = chrome.i18n?.getUILanguage?.() || "zh-CN";
   return language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
+}
+
+function menuCopy() {
+  if (browserLocale() === "zh-CN") {
+    return {
+      image: "用 TrustPic 分析这张图片",
+      page: "用 TrustPic 分析当前图片页面",
+    };
+  }
+  return {
+    image: "Analyze image with TrustPic",
+    page: "Analyze current image page with TrustPic",
+  };
 }
 
 function supportedImageType(contentType, url) {

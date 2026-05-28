@@ -3,7 +3,7 @@ const DEFAULT_API_BASE = "http://127.0.0.1:8000";
 const COPY = {
   "zh-CN": {
     subtitle: "右键图片证据报告",
-    primaryHint: "在网页图片上右键，选择 Analyze image with TrustPic。报告会在这个侧栏里更新。",
+    primaryHint: "在网页图片上右键，选择“用 TrustPic 分析这张图片”。如果是单独打开的图片页面，选择“用 TrustPic 分析当前图片页面”。",
     analyzeUrl: "分析",
     urlPlaceholder: "图片 URL",
     source: "图片来源",
@@ -24,7 +24,7 @@ const COPY = {
   },
   "en-US": {
     subtitle: "Right-click image evidence report",
-    primaryHint: "Right-click an image on a page and choose Analyze image with TrustPic. The report updates in this side panel.",
+    primaryHint: "Right-click an image and choose Analyze image with TrustPic. If the image is open as its own page, choose Analyze current image page with TrustPic.",
     analyzeUrl: "Analyze",
     urlPlaceholder: "Image URL",
     source: "Image source",
