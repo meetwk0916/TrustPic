@@ -1,0 +1,53 @@
+# TrustPic Chrome Web Store Notes
+
+Last aligned: 2026-05-29
+
+## Package
+
+Create the upload ZIP from the repository root:
+
+```bash
+sh extension/package.sh
+```
+
+Upload the generated `trustpic-chrome-0.1.0.zip` in the Chrome Web Store Developer Dashboard.
+
+## Listing Draft
+
+Short description:
+
+```text
+Right-click an image to view an evidence report for AI markers, source records, metadata, and local differences.
+```
+
+Detailed description:
+
+```text
+TrustPic provides a single-image evidence report from the browser context menu.
+
+Right-click an image and choose "Analyze image with TrustPic". The report opens in Chrome Side Panel and summarizes readable evidence such as AI-related markers, source records, photo/save metadata, and local difference clues.
+
+TrustPic is evidence-first. It does not claim that an image is real, fake, authentic, or AI-generated when readable evidence is absent. The report shows confidence and explains what each signal can and cannot show.
+```
+
+## Permission Justification
+
+- `contextMenus`: adds the right-click image analysis action.
+- `sidePanel`: displays the evidence report in Chrome Side Panel.
+- `storage`: stores the latest image URL, latest analysis status, and latest returned report locally in Chrome.
+- `host_permissions: <all_urls>`: lets the extension fetch the image URL selected by the user from arbitrary webpages before sending it to the TrustPic API.
+
+## Privacy Disclosure Draft
+
+TrustPic processes only the image selected by the user through the right-click menu. The extension fetches that image and sends it to the TrustPic API for analysis. Uploaded image bytes are not stored by the extension. The extension stores only the latest image URL, latest analysis status, and latest returned report in Chrome local storage.
+
+TrustPic does not sell user data, does not run advertising tracking, and does not use the extension for cross-site behavioral profiling.
+
+## Reviewer Notes
+
+- Manifest V3 extension.
+- No remotely hosted executable code.
+- No analytics SDK.
+- No user account requirement.
+- The backend API is `https://trustpic-production.up.railway.app`.
+- The extension requires broad host access because the user can right-click images from arbitrary webpages.
