@@ -66,18 +66,29 @@ Health check:
 
 ## Railway Setup
 
-The backend is configured for Railway with `backend/Dockerfile` and `backend/railway.json`.
+The backend can be deployed on Railway from the repository root or from `/backend`.
 
-Recommended Railway service:
+Recommended Railway service, lowest-friction path:
 
 - Source: this GitHub repository.
+- Root directory: leave empty.
+- Config file path: leave empty.
+- Builder: Dockerfile.
+- Dockerfile: root `Dockerfile`.
+- Health check path: `/api/v1/health`.
+- Start command: leave empty; the Dockerfile command is used.
+
+The repository root includes `Dockerfile`, `.dockerignore`, and `railway.json` so Railway can build the backend even when the service is configured from the repo root.
+
+Alternative isolated-monorepo setup:
+
 - Root directory: `/backend`.
 - Config file path: `/backend/railway.json`.
 - Builder: Dockerfile.
 - Health check path: `/api/v1/health`.
 - Start command: leave empty; the Dockerfile command is used.
 
-Railway provides a `PORT` environment variable for public services. The Dockerfile listens on `${PORT:-8000}` so the same image works locally and on Railway.
+Railway provides a `PORT` environment variable for public services. Both Dockerfiles listen on `${PORT:-8000}` so the same image works locally and on Railway.
 
 Set Railway variables:
 
