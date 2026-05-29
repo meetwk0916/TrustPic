@@ -88,15 +88,17 @@ h1 {
   font-size: 13px;
 }
 
-.locale-badge {
+.locale-toggle {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 28px;
   padding: 4px 10px;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
   background: var(--panel-bg);
   color: var(--neutral-text);
+  cursor: pointer;
   font-size: 13px;
   font-weight: 800;
   white-space: nowrap;

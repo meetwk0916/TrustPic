@@ -212,7 +212,7 @@ def test_exif_jpeg_reports_metadata_fields() -> None:
     assert exif["details"]["fields"]["Make"] == "TrustPic Camera"
     assert exif["details"]["fields"]["Model"] == "V0 EXIF Sample"
     assert payload["interpretation"]["confidence_label"] == "中等"
-    assert payload["interpretation"]["conclusion"] == "发现这张图包含拍摄或保存信息，但没有发现 AI 相关来源或标记。"
+    assert payload["interpretation"]["conclusion"] == "发现这张图包含相机拍摄相关信息，但没有发现 AI 相关来源或标记。"
     exif_evidence = payload["interpretation"]["evidence_chain"][3]
     assert exif_evidence["title"] == "拍摄/编辑信息"
     assert exif_evidence["status_label"] == "支持证据"

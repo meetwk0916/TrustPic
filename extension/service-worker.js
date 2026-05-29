@@ -1,17 +1,17 @@
 const MENU_ID = "trustpic-analyze-image";
 const DEFAULT_API_BASE = "https://trustpic-production.up.railway.app";
 
-installContextMenus();
+syncContextMenu();
 
 addChromeListener(chrome.runtime?.onInstalled, () => {
-  installContextMenus();
+  syncContextMenu();
   if (chrome.sidePanel?.setPanelBehavior) {
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
   }
 });
 
 addChromeListener(chrome.runtime?.onStartup, () => {
-  installContextMenus();
+  syncContextMenu();
 });
 
 addChromeListener(chrome.contextMenus?.onClicked, async (info, tab) => {
@@ -21,6 +21,21 @@ addChromeListener(chrome.contextMenus?.onClicked, async (info, tab) => {
 
   const sourceUrl = info.srcUrl;
   if (!sourceUrl) return;
+  await analyzeSelectedImage(sourceUrl, await storedLocale());
+});
+
+addChromeListener(chrome.runtime?.onMessage, (message) => {
+  const locale = isSupportedLocale(message?.locale) ? message.locale : browserLocale();
+  if (message?.type === "trustpic-locale-changed") {
+    installContextMenus(locale);
+    return;
+  }
+  if (message?.type !== "trustpic-analyze-source-url" || !message.sourceUrl) return;
+  installContextMenus(locale);
+  analyzeSelectedImage(String(message.sourceUrl), locale);
+});
+
+async function analyzeSelectedImage(sourceUrl, locale) {
   await chrome.storage.local.set({
     activeAnalysis: {
       status: "running",
@@ -39,7 +54,7 @@ addChromeListener(chrome.contextMenus?.onClicked, async (info, tab) => {
     const report = await analyzeImageUrl({
       sourceUrl,
       apiBase: DEFAULT_API_BASE,
-      locale: browserLocale(),
+      locale,
     });
 
     await chrome.storage.local.set({
@@ -66,7 +81,7 @@ addChromeListener(chrome.contextMenus?.onClicked, async (info, tab) => {
     chrome.action.setBadgeText({ text: "!" });
     chrome.action.setBadgeBackgroundColor({ color: "#dc2626" });
   }
-});
+}
 
 function addChromeListener(event, listener) {
   if (event?.addListener) {
@@ -74,10 +89,14 @@ function addChromeListener(event, listener) {
   }
 }
 
-function installContextMenus() {
+async function syncContextMenu() {
+  installContextMenus(await storedLocale());
+}
+
+function installContextMenus(locale = browserLocale()) {
   if (!chrome.contextMenus?.removeAll || !chrome.contextMenus?.create) return;
 
-  const copy = menuCopy();
+  const copy = menuCopy(locale);
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: MENU_ID,
@@ -151,8 +170,17 @@ function browserLocale() {
   return languages.some((language) => String(language).toLowerCase().startsWith("zh")) ? "zh-CN" : "en-US";
 }
 
-function menuCopy() {
-  if (browserLocale() === "zh-CN") {
+async function storedLocale() {
+  const settings = await chrome.storage.local.get(["locale"]);
+  return isSupportedLocale(settings.locale) ? settings.locale : browserLocale();
+}
+
+function isSupportedLocale(value) {
+  return value === "zh-CN" || value === "en-US";
+}
+
+function menuCopy(locale = browserLocale()) {
+  if (locale === "zh-CN") {
     return {
       analyze: "用 TrustPic 分析图片",
     };

@@ -33,7 +33,7 @@ COPY = {
             "ela": "发现局部区域存在差异集中线索。",
             "valid_source": "发现这张图带有可验证的来源记录。",
             "source_attention": "发现图片来源记录，但验证状态需要留意。",
-            "exif": "发现这张图包含拍摄或保存信息，但没有发现 AI 相关来源或标记。",
+            "exif": "发现这张图包含相机拍摄相关信息，但没有发现 AI 相关来源或标记。",
             "none": "没有发现 TrustPic v0 能读取的 AI 来源、AI 标记或局部差异线索。",
         },
         "limits": [
@@ -97,11 +97,14 @@ COPY = {
             "unchecked_summary": "这次没有完成拍摄/编辑信息检查。",
             "unchecked_means": "TrustPic 没有得到这一项证据。",
             "unchecked_does_not": "这不代表图片没有元数据。",
-            "detected_summary": "发现 {field_count} 项拍摄或保存信息。",
-            "detected_means": "文件里包含 EXIF 元数据，可能包括相机、软件、拍摄参数或保存信息。",
-            "detected_does_not": "EXIF 可以被修改或移除；它不能单独证明图片真实，也不能排除后期处理。",
-            "absent_summary": "没有发现拍摄或保存信息。",
-            "absent_means": "文件里没有检测到 EXIF 元数据。",
+            "capture_summary": "发现 {field_count} 项元数据，其中包含相机拍摄相关字段。",
+            "capture_means": "文件里包含相机或拍摄参数字段，例如设备型号、拍摄时间、镜头或曝光信息。这更像是拍摄链路留下的信息。",
+            "capture_does_not": "EXIF 可以被修改、复制或移除；它不能单独证明图片真实，也不能排除后期处理。",
+            "software_summary": "只发现软件保存或文件结构类信息，未发现相机拍摄字段。",
+            "software_means": "这类字段说明文件可能被某个软件保存、导出或处理过。例如 Software=Picasa 指向保存/处理软件，不说明图片由拍摄设备直接生成。",
+            "software_does_not": "这不是相机拍摄证据，也不能单独说明图片真实、AI 生成或被篡改。",
+            "absent_summary": "没有发现可读的拍摄或保存元数据。",
+            "absent_means": "文件里没有检测到 TrustPic v0 可读取的 EXIF 元数据。",
             "absent_does_not": "很多截图、平台转发图或压缩图都没有 EXIF；这不代表图片一定可疑。",
         },
         "originality": {
@@ -111,8 +114,8 @@ COPY = {
             "unchecked_reason": "图片来源记录检查未完成",
             "valid_c2pa_reason": "文件带有可读取且签名有效的来源记录",
             "invalid_c2pa_reason": "文件带有来源记录，但签名验证状态不完整或异常",
-            "rich_exif_reason": "文件保留了较多拍摄或保存信息",
-            "partial_exif_reason": "文件保留了部分拍摄或保存信息，但没有可读取的来源记录",
+            "rich_exif_reason": "文件保留了较多相机拍摄相关信息",
+            "partial_exif_reason": "文件保留了部分相机拍摄相关信息，但没有可读取的来源记录",
             "absent_reason": "没有可读取的来源记录或 EXIF；截图、转发、转码或二次保存都可能造成这种结果",
             "summary": "当前文件{label}。",
             "sentence": "当前文件原始性判断：{label}。",
@@ -145,7 +148,7 @@ COPY = {
             "ela": "Local areas show concentrated difference clues.",
             "valid_source": "This file contains a verifiable source record.",
             "source_attention": "A source record was found, but its validation state needs attention.",
-            "exif": "This file contains photo or save metadata, but no AI-related source or marker was found.",
+            "exif": "This file contains camera-capture related metadata, but no AI-related source or marker was found.",
             "none": "No readable AI source, AI marker, or local-difference clue was found by TrustPic v0.",
         },
         "limits": [
@@ -209,11 +212,14 @@ COPY = {
             "unchecked_summary": "The photo/save metadata check did not complete.",
             "unchecked_means": "TrustPic did not get evidence for this item.",
             "unchecked_does_not": "This does not mean the image has no metadata.",
-            "detected_summary": "Found {field_count} photo or save metadata fields.",
-            "detected_means": "The file contains EXIF metadata, which may include camera, software, capture settings, or save information.",
-            "detected_does_not": "EXIF can be modified or removed. It cannot prove authenticity or rule out later editing on its own.",
-            "absent_summary": "No photo or save metadata was found.",
-            "absent_means": "The file does not contain EXIF metadata TrustPic can read.",
+            "capture_summary": "Found {field_count} metadata fields, including camera-capture related fields.",
+            "capture_means": "The file contains camera or capture-setting fields, such as device model, capture time, lens, or exposure information. These are more consistent with capture-chain metadata.",
+            "capture_does_not": "EXIF can be modified, copied, or removed. It cannot prove authenticity or rule out later editing on its own.",
+            "software_summary": "Only software-save or file-structure metadata was found; no camera-capture field was found.",
+            "software_means": "These fields suggest the file may have been saved, exported, or processed by software. For example, Software=Picasa points to save/processing software, not direct camera capture.",
+            "software_does_not": "This is not camera-capture evidence, and it does not prove authenticity, AI generation, or manipulation on its own.",
+            "absent_summary": "No readable photo or save metadata was found.",
+            "absent_means": "The file does not contain EXIF metadata TrustPic v0 can read.",
             "absent_does_not": "Many screenshots, forwarded images, and compressed platform images have no EXIF. This does not make the image automatically suspicious.",
         },
         "originality": {
@@ -223,8 +229,8 @@ COPY = {
             "unchecked_reason": "the source record check did not complete",
             "valid_c2pa_reason": "the file has a readable source record with a valid signature",
             "invalid_c2pa_reason": "the file has a source record, but the signature validation state is incomplete or unusual",
-            "rich_exif_reason": "the file retains relatively rich photo or save metadata",
-            "partial_exif_reason": "the file retains some photo or save metadata, but no readable source record",
+            "rich_exif_reason": "the file retains relatively rich camera-capture related metadata",
+            "partial_exif_reason": "the file retains some camera-capture related metadata, but no readable source record",
             "absent_reason": "no readable source record or EXIF was found; screenshots, forwarding, transcoding, or secondary saves can cause this",
             "summary": " Current file: {label}.",
             "sentence": "File originality reading: {label}.",
@@ -266,7 +272,7 @@ def human_conclusion(signals: ReportSignals, copy: dict) -> str:
         if c2pa_validation_state(signals.c2pa) == "Valid":
             return conclusions["valid_source"]
         return conclusions["source_attention"]
-    if signals.exif.detected:
+    if capture_exif(signals.exif):
         return conclusions["exif"]
     return conclusions["none"]
 
@@ -287,7 +293,7 @@ def confidence_label(signals: ReportSignals, copy: dict) -> str:
         return confidence["moderate"]
     if rich_exif(signals.exif):
         return confidence["fairly_strong"]
-    if signals.exif.detected:
+    if capture_exif(signals.exif):
         return confidence["moderate"]
     return confidence["limited"]
 
@@ -485,14 +491,24 @@ def photo_metadata_evidence(signal: EvidenceSignal, copy: dict) -> Interpretatio
             does_not_mean=text["unchecked_does_not"],
             details=signal.details,
         )
-    if signal.detected:
+    if capture_exif(signal):
         return InterpretationEvidence(
             key="exif",
             title=copy["titles"]["photo_metadata"],
             status_label=copy["status"]["support"],
-            summary=text["detected_summary"].format(field_count=field_count),
-            means=text["detected_means"],
-            does_not_mean=text["detected_does_not"],
+            summary=text["capture_summary"].format(field_count=field_count),
+            means=text["capture_means"],
+            does_not_mean=text["capture_does_not"],
+            details=signal.details,
+        )
+    if signal.detected:
+        return InterpretationEvidence(
+            key="exif",
+            title=copy["titles"]["photo_metadata"],
+            status_label=copy["status"]["warning"],
+            summary=text["software_summary"],
+            means=text["software_means"],
+            does_not_mean=text["software_does_not"],
             details=signal.details,
         )
     return InterpretationEvidence(
@@ -611,7 +627,7 @@ def file_originality(c2pa_signal: EvidenceSignal, copy: dict, exif_signal: Evide
             "reasons": [original_copy["rich_exif_reason"]],
         }
 
-    if exif_signal is not None and exif_signal.detected:
+    if exif_signal is not None and capture_exif(exif_signal):
         return {
             "label": original_copy["limited"],
             "reasons": [original_copy["partial_exif_reason"]],
@@ -631,4 +647,41 @@ def exif_field_count(signal: EvidenceSignal) -> int:
 
 
 def rich_exif(signal: EvidenceSignal) -> bool:
-    return signal.detected and exif_field_count(signal) >= 5
+    return capture_exif(signal) and exif_field_count(signal) >= 5
+
+
+def capture_exif(signal: EvidenceSignal) -> bool:
+    fields = exif_fields(signal)
+    if not signal.detected or not fields:
+        return False
+
+    capture_field_names = {
+        "Make",
+        "Model",
+        "DateTimeOriginal",
+        "DateTimeDigitized",
+        "DateTime",
+        "LensModel",
+        "LensMake",
+        "ExposureTime",
+        "FNumber",
+        "ISOSpeedRatings",
+        "PhotographicSensitivity",
+        "FocalLength",
+        "FocalLengthIn35mmFilm",
+        "ExposureProgram",
+        "ExposureMode",
+        "MeteringMode",
+        "Flash",
+        "WhiteBalance",
+        "SceneCaptureType",
+        "GPSInfo",
+    }
+    return any(name in fields for name in capture_field_names)
+
+
+def exif_fields(signal: EvidenceSignal) -> dict:
+    if not isinstance(signal.details, dict):
+        return {}
+    fields = signal.details.get("fields")
+    return fields if isinstance(fields, dict) else {}
