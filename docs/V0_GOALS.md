@@ -47,7 +47,8 @@ TrustPic v0 must not claim:
 - Web UI that can upload one image and display the report.
 - Web UI that highlights strong AI-related evidence, separates core evidence from local-difference analysis, and supports light/dark mode.
 - Chinese and English report interpretation via `locale=zh-CN` or `locale=en-US` on `POST /api/v1/analyze`.
-- Unpacked Chrome Side Panel extension for self-use right-click image analysis through the same backend API.
+- Chrome Side Panel extension for right-click image analysis through the same backend API.
+- Chrome Web Store upload package and privacy policy page.
 - Local run command documented in the repository.
 
 ### Deferred
@@ -55,7 +56,7 @@ TrustPic v0 must not claim:
 - SSP or other deep-learning AI detector models.
 - SynthID direct detection.
 - OpenAI Verify automation.
-- Chrome Web Store packaged release.
+- Chrome Web Store approval/publication.
 - WeChat Mini Program release.
 - User accounts.
 - Persistent image storage.
