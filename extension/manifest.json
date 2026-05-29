@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TrustPic",
-  "description": "Right-click an image to view an evidence report for AI markers, source records, and local differences.",
+  "description": "Right-click an image to generate a TrustPic evidence report.",
   "version": "0.1.0",
   "icons": {
     "16": "icons/icon-16.png",

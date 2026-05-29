@@ -2,7 +2,7 @@
 
 Last aligned: 2026-05-29
 
-The Chrome extension is a self-use right-click client for the existing TrustPic API. It does not run evidence analysis locally. It fetches the selected page image, sends it to `POST /api/v1/analyze`, and renders the returned `interpretation` report in Chrome Side Panel.
+The Chrome extension has one purpose: right-click one image in Chrome and generate a TrustPic evidence report for that selected image. It does not run evidence analysis locally. It fetches the selected page image, sends it to `POST /api/v1/analyze`, and renders the returned `interpretation` report in Chrome Side Panel.
 
 ## Current Shape
 
