@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from PIL import Image, ImageDraw
 
 from app.services import analyze as analyze_service
-from app.main import app
+from app.main import allowed_origin_regex, app
 
 client = TestClient(app)
 
@@ -43,6 +43,12 @@ def test_health() -> None:
     response = client.get("/api/v1/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_allowed_origin_regex_from_env(monkeypatch) -> None:
+    monkeypatch.setenv("TRUSTPIC_ALLOWED_ORIGIN_REGEX", r"https://.*\.pages\.dev")
+
+    assert allowed_origin_regex() == r"https://.*\.pages\.dev"
 
 
 def test_analyze_png_returns_report_shape() -> None:

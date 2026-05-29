@@ -94,11 +94,18 @@ Set Railway variables:
 
 ```bash
 TRUSTPIC_ALLOWED_ORIGINS=https://trustpic.example.com,https://www.trustpic.example.com
+TRUSTPIC_ALLOWED_ORIGIN_REGEX=
 TRUSTPIC_MAX_UPLOAD_MB=15
 TRUSTPIC_MAX_PIXELS=40000000
 ```
 
-During preview deployment, include the Cloudflare Pages preview URL in `TRUSTPIC_ALLOWED_ORIGINS`. After the final domain is attached, remove preview origins unless still needed.
+During preview deployment, include the Cloudflare Pages preview URL in `TRUSTPIC_ALLOWED_ORIGINS`. If Pages preview URLs are changing while testing, temporarily use:
+
+```bash
+TRUSTPIC_ALLOWED_ORIGIN_REGEX=https://.*\.pages\.dev
+```
+
+After the final domain is attached, prefer exact `TRUSTPIC_ALLOWED_ORIGINS` values and clear the preview regex unless still needed.
 
 ## Cloudflare Pages Setup
 
@@ -146,6 +153,12 @@ After the frontend domain is final, update the backend:
 
 ```bash
 TRUSTPIC_ALLOWED_ORIGINS=https://trustpic.example.com,https://www.trustpic.example.com
+```
+
+For temporary Cloudflare Pages preview testing:
+
+```bash
+TRUSTPIC_ALLOWED_ORIGIN_REGEX=https://.*\.pages\.dev
 ```
 
 After the backend domain is final, update Pages:
