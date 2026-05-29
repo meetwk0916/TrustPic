@@ -17,17 +17,23 @@ Upload the generated `trustpic-chrome-0.1.0.zip` in the Chrome Web Store Develop
 Short description:
 
 ```text
-Right-click an image to view an evidence report for AI markers, source records, metadata, and local differences.
+Right-click an image to generate a TrustPic evidence report.
 ```
 
 Detailed description:
 
 ```text
-TrustPic provides a single-image evidence report from the browser context menu.
+TrustPic has one purpose: generate an evidence report for an image selected from the browser context menu.
 
-Right-click an image and choose "Analyze image with TrustPic". The report opens in Chrome Side Panel and summarizes readable evidence such as AI-related markers, source records, camera-capture metadata, software-save metadata, and local difference clues.
+Right-click an image and choose "Analyze image with TrustPic". The report opens in Chrome Side Panel and summarizes readable evidence found in that selected image.
 
 TrustPic is evidence-first. It does not claim that an image is real, fake, authentic, or AI-generated when readable evidence is absent. The report shows confidence and explains what each signal can and cannot show.
+```
+
+## Single Purpose Statement
+
+```text
+TrustPic lets the user right-click one image in Chrome and generate a single evidence report for that selected image.
 ```
 
 ## Permission Justification
@@ -46,6 +52,7 @@ TrustPic does not sell user data, does not run advertising tracking, and does no
 ## Reviewer Notes
 
 - Manifest V3 extension.
+- Single purpose: right-click one image and generate a TrustPic evidence report for that selected image.
 - No remotely hosted executable code.
 - No analytics SDK.
 - No user account requirement.
