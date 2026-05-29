@@ -18,11 +18,17 @@ def allowed_origins() -> list[str]:
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
 
+def allowed_origin_regex() -> str | None:
+    raw = os.getenv("TRUSTPIC_ALLOWED_ORIGIN_REGEX")
+    return raw.strip() if raw else None
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins(),
+    allow_origin_regex=allowed_origin_regex(),
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
