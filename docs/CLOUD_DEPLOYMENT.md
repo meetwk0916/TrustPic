@@ -131,6 +131,12 @@ Recommended:
 
 Both must use HTTPS.
 
+Current Railway API during initial deployment:
+
+```text
+https://trustpic-production.up.railway.app
+```
+
 Cloudflare DNS:
 
 - `trustpic.example.com`: attach as the custom domain on the Pages project.
@@ -145,7 +151,7 @@ TRUSTPIC_ALLOWED_ORIGINS=https://trustpic.example.com,https://www.trustpic.examp
 After the backend domain is final, update Pages:
 
 ```bash
-VITE_API_BASE=https://api.trustpic.example.com
+VITE_API_BASE=https://trustpic-production.up.railway.app
 ```
 
 Then redeploy both sides.
