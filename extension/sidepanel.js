@@ -1,11 +1,6 @@
-const DEFAULT_API_BASE = "http://127.0.0.1:8000";
-
 const COPY = {
   "zh-CN": {
     subtitle: "右键图片证据报告",
-    primaryHint: "在网页图片或独立图片页上右键，选择“用 TrustPic 分析图片”。报告会在这个侧栏里更新。",
-    analyzeUrl: "分析",
-    urlPlaceholder: "图片 URL",
     source: "图片来源",
     confidence: "置信度",
     conclusion: "结论",
@@ -19,18 +14,12 @@ const COPY = {
     means: "能说明什么",
     doesNotMean: "不能说明什么",
     technicalDetails: "技术细节",
-    waiting: "等待右键图片，或粘贴图片 URL。",
+    waiting: "在网页图片上右键，选择“用 TrustPic 分析图片”。",
     loading: "分析中...",
-    fetching: "正在读取图片 URL...",
-    noUrl: "请输入图片 URL。",
-    urlNotImage: "这个 URL 没有返回可分析的图片。",
     requestFailed: "分析失败",
   },
   "en-US": {
     subtitle: "Right-click image evidence report",
-    primaryHint: "Right-click a page image or a standalone image page and choose Analyze image with TrustPic. The report updates in this side panel.",
-    analyzeUrl: "Analyze",
-    urlPlaceholder: "Image URL",
     source: "Image source",
     confidence: "Confidence",
     conclusion: "Conclusion",
@@ -44,24 +33,17 @@ const COPY = {
     means: "What it can show",
     doesNotMean: "What it cannot show",
     technicalDetails: "Technical details",
-    waiting: "Right-click an image, or paste an image URL.",
+    waiting: "Right-click a page image and choose Analyze image with TrustPic.",
     loading: "Analyzing...",
-    fetching: "Fetching image URL...",
-    noUrl: "Enter an image URL.",
-    urlNotImage: "This URL did not return an analyzable image.",
     requestFailed: "Analysis failed",
   },
 };
 
 const state = {
-  apiBase: DEFAULT_API_BASE,
   locale: browserLocale(),
 };
 
 const elements = {
-  apiBase: document.getElementById("apiBase"),
-  imageUrl: document.getElementById("imageUrl"),
-  urlButton: document.getElementById("urlButton"),
   notice: document.getElementById("notice"),
   sourceSection: document.getElementById("sourceSection"),
   sourceLink: document.getElementById("sourceLink"),
@@ -83,11 +65,7 @@ const elements = {
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
-  const saved = await chrome.storage.local.get(["activeAnalysis", "apiBase", "lastError", "lastReport", "lastSourceUrl"]);
-  state.apiBase = normalizeApiBase(saved.apiBase || DEFAULT_API_BASE);
-
-  elements.apiBase.value = state.apiBase;
-  elements.imageUrl.value = saved.lastSourceUrl || "";
+  const saved = await chrome.storage.local.get(["activeAnalysis", "lastError", "lastReport", "lastSourceUrl"]);
 
   applyCopy();
   bindEvents();
@@ -95,14 +73,6 @@ async function init() {
 }
 
 function bindEvents() {
-  elements.apiBase.addEventListener("change", async () => {
-    state.apiBase = normalizeApiBase(elements.apiBase.value || DEFAULT_API_BASE);
-    elements.apiBase.value = state.apiBase;
-    await chrome.storage.local.set({ apiBase: state.apiBase });
-  });
-
-  elements.urlButton.addEventListener("click", analyzeImageUrl);
-
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== "local") return;
     const next = {};
@@ -117,9 +87,6 @@ function applyCopy() {
   const copy = COPY[state.locale];
   document.documentElement.lang = state.locale === "en-US" ? "en" : "zh-CN";
   document.getElementById("subtitle").textContent = copy.subtitle;
-  document.getElementById("primaryHint").textContent = copy.primaryHint;
-  document.getElementById("urlButton").textContent = copy.analyzeUrl;
-  document.getElementById("imageUrl").placeholder = copy.urlPlaceholder;
   document.getElementById("sourceLabel").textContent = copy.source;
   document.getElementById("confidenceLabel").textContent = copy.confidence;
   document.getElementById("conclusionLabel").textContent = copy.conclusion;
@@ -154,83 +121,10 @@ function renderStoredState(saved) {
   }
 }
 
-async function analyzeImageUrl() {
-  const copy = COPY[state.locale];
-  const sourceUrl = elements.imageUrl.value.trim();
-  if (!sourceUrl) {
-    showNotice(copy.noUrl);
-    return;
-  }
-
-  await chrome.storage.local.set({
-    activeAnalysis: {
-      status: "running",
-      sourceUrl,
-      startedAt: Date.now(),
-    },
-    lastReport: null,
-    lastError: null,
-    lastSourceUrl: sourceUrl,
-  });
-  renderSource(sourceUrl);
-
-  try {
-    showNotice(copy.fetching);
-    const report = await analyzeUrlInSidePanel(sourceUrl);
-    await chrome.storage.local.set({
-      activeAnalysis: {
-        status: "complete",
-        sourceUrl,
-        completedAt: Date.now(),
-      },
-      lastReport: report,
-      lastSourceUrl: sourceUrl,
-      lastAnalyzedAt: Date.now(),
-      lastError: null,
-    });
-  } catch (error) {
-    await chrome.storage.local.set({
-      activeAnalysis: {
-        status: "error",
-        sourceUrl,
-        completedAt: Date.now(),
-      },
-      lastError: error instanceof Error ? error.message : copy.requestFailed,
-    });
-  }
-}
-
-async function analyzeUrlInSidePanel(sourceUrl) {
-  const response = await fetch(sourceUrl, {
-    credentials: "include",
-    cache: "no-store",
-  });
-  if (!response.ok) throw new Error(`Image request failed with ${response.status}`);
-
-  const sourceBlob = await response.blob();
-  const contentType = supportedImageType(sourceBlob.type, sourceUrl);
-  if (!contentType) throw new Error(COPY[state.locale].urlNotImage);
-
-  const imageBlob = sourceBlob.type === contentType ? sourceBlob : sourceBlob.slice(0, sourceBlob.size, contentType);
-  const formData = new FormData();
-  formData.append("file", imageBlob, filenameFromUrl(sourceUrl, contentType));
-
-  const apiResponse = await fetch(analyzeEndpoint(), {
-    method: "POST",
-    body: formData,
-  });
-  if (!apiResponse.ok) {
-    const payload = await apiResponse.json().catch(() => null);
-    throw new Error(payload?.detail || `${COPY[state.locale].requestFailed}: ${apiResponse.status}`);
-  }
-  return apiResponse.json();
-}
-
 function renderSource(sourceUrl) {
   elements.sourceSection.hidden = false;
   elements.sourceLink.href = sourceUrl;
   elements.sourceLink.textContent = sourceUrl;
-  elements.imageUrl.value = sourceUrl;
 }
 
 function renderReport(report) {
@@ -353,14 +247,6 @@ function showNotice(message) {
 
 function hideNotice() {
   elements.notice.textContent = "";
-}
-
-function analyzeEndpoint() {
-  return `${state.apiBase}/api/v1/analyze?locale=${encodeURIComponent(state.locale)}`;
-}
-
-function normalizeApiBase(value) {
-  return String(value || DEFAULT_API_BASE).replace(/\/+$/, "");
 }
 
 function browserLocale() {

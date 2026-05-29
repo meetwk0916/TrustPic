@@ -1,5 +1,5 @@
 const MENU_ID = "trustpic-analyze-image";
-const DEFAULT_API_BASE = "http://127.0.0.1:8000";
+const DEFAULT_API_BASE = "https://trustpic-production.up.railway.app";
 
 installContextMenus();
 
@@ -36,10 +36,9 @@ addChromeListener(chrome.contextMenus?.onClicked, async (info, tab) => {
   chrome.action.setBadgeBackgroundColor({ color: "#d97706" });
 
   try {
-    const settings = await chrome.storage.local.get(["apiBase"]);
     const report = await analyzeImageUrl({
       sourceUrl,
-      apiBase: settings.apiBase || DEFAULT_API_BASE,
+      apiBase: DEFAULT_API_BASE,
       locale: browserLocale(),
     });
 
