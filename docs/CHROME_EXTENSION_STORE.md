@@ -38,10 +38,16 @@ TrustPic lets the user right-click one image in Chrome and generate a single evi
 
 ## Permission Justification
 
-- `contextMenus`: adds the right-click image analysis action.
-- `sidePanel`: displays the evidence report in Chrome Side Panel.
-- `storage`: stores the latest image URL, latest analysis status, and latest returned report locally in Chrome.
-- `host_permissions: <all_urls>`: lets the extension fetch the image URL selected by the user from arbitrary webpages before sending it to the TrustPic API.
+- `contextMenus`: required to show the "Analyze image with TrustPic" action when the user right-clicks an image. This is the extension's main entry point.
+- `sidePanel`: required to show the TrustPic evidence report in Chrome Side Panel after the user right-clicks an image.
+- `storage`: required to store the current report state and language preference locally in Chrome. TrustPic does not use storage for tracking, advertising, or cross-site profiling.
+- `host_permissions: <all_urls>`: required to fetch the image URL that the user explicitly selects through the right-click image menu. The extension does not scan webpages automatically, does not read page content, and does not access images unless the user starts the analysis from the context menu.
+
+## Remote Code Declaration
+
+```text
+TrustPic does not use remote code. All extension JavaScript, HTML, CSS, and assets are packaged inside the extension. The extension only sends the user-selected image to the TrustPic API and receives JSON/image report data. The API response is data, not executable code.
+```
 
 ## Privacy Disclosure Draft
 

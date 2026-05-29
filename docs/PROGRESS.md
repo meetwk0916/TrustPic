@@ -1,6 +1,6 @@
 # TrustPic Progress
 
-Last aligned: 2026-05-28
+Last aligned: 2026-05-29
 
 ## Current State
 
@@ -14,8 +14,10 @@ The current implementation includes:
 - Evidence-first report contract with verdict, summary, signals, human-readable `interpretation`, limitations, recommendation, and `assets.ela_heatmap_data_url`.
 - React + Vite Web UI for selecting an image, previewing it, showing file metadata, calling the backend, and displaying a user-readable conclusion, confidence label, ordered evidence chain, foldable evidence explanations, boundary notes, and ELA heatmap.
 - Web UI can switch between Chinese and English. The frontend passes `locale=zh-CN` or `locale=en-US` to the backend, and the backend generates localized `interpretation` wording from the same evidence signals.
-- Unpacked Chrome extension client under `extension/` for self-use right-click image analysis in Chrome Side Panel and image URL fallback.
+- Chrome extension client under `extension/` for one-purpose right-click image analysis in Chrome Side Panel and image URL fallback.
+- Chrome Web Store upload package generation with store notes, permission justifications, remote-code declaration, and a static privacy policy page at Web path `/privacy.html`.
 - AI-related C2PA source records, including OpenAI and explicit Google AI product records such as Gemini, NotebookLM, Imagen, SynthID, and Nano Banana, are interpreted as AI-related source evidence even when GB 45438/TC260 markers are absent.
+- EXIF interpretation separates camera-capture metadata from software-save or file-structure metadata. Software-only fields such as `Software=Picasa`, `Orientation`, or `ExifOffset` do not count as camera-capture evidence and do not raise the main conclusion, confidence label, or file-originality reading.
 - `图片来源记录` now also carries file-originality reading in its visible summary and details (`originality_label` and `originality_reasons`) without adding a separate top-level report module.
 - ELA is now a tile-level local-difference signal. Ordinary global compression is ignored as a primary user-facing finding; `review` means a small set of local tiles stands out from the overall recompression pattern.
 - Local sample-image generator for repeatable smoke checks.
@@ -456,12 +458,39 @@ npm run build
 
 Result: TypeScript build and Vite production build passed.
 
+Validated on 2026-05-29 after EXIF capture-vs-software wording, Chrome extension language switching, store package wording, and privacy policy page updates:
+
+```bash
+cd backend
+.venv/bin/python -m pytest
+```
+
+Result: `51 passed`.
+
+```bash
+cd web
+npm run build
+```
+
+Result: TypeScript build and Vite production build passed; `web/public/privacy.html` is copied to `dist/privacy.html`.
+
+```bash
+python3 -m json.tool extension/manifest.json
+node --check extension/sidepanel.js
+node --check extension/service-worker.js
+sh extension/package.sh
+unzip -p trustpic-chrome-0.1.0.zip manifest.json
+git diff --check
+```
+
+Result: manifest JSON and extension JavaScript syntax checks passed, Chrome Web Store ZIP was regenerated, the ZIP manifest contains the single-purpose description, and no whitespace errors were found.
+
 ## Git And Index
 
 - Remote: `https://github.com/meetwk0916/TrustPic`
 - Branch: `main`
 - Initial commit: `dfb0104 Initial TrustPic v0 prototype`
-- CodeGraph status: up to date after Chrome Side Panel extension additions.
+- CodeGraph status: initialized in this repository.
 
 ## Not Blocked By API Quota
 
@@ -472,7 +501,7 @@ Deferred quota/API-dependent directions remain:
 - OpenAI Verify automation.
 - SynthID direct detection.
 - Commercial third-party detector API fallback.
-- Chrome extension integration.
+- Chrome Web Store review/publication.
 
 ## Remaining Work To Finish v0
 

@@ -179,8 +179,10 @@ TrustPic v0 chooses the conclusion by evidence priority, not by a generic verdic
 5. If a source record is detected but validation is incomplete or abnormal:
    `发现图片来源记录，但验证状态需要留意。`
 
-6. If only photo/edit metadata is detected:
-   `发现这张图包含拍摄或保存信息，但没有发现 AI 相关来源或标记。`
+6. If camera-capture metadata is detected:
+   `发现这张图包含相机拍摄相关信息，但没有发现 AI 相关来源或标记。`
+
+   Software-only EXIF, such as `Software=Picasa` without camera-capture fields, stays inside the `拍摄/编辑信息` evidence item as `需留意`; it does not raise the main conclusion or confidence label.
 
 7. If no supported evidence is detected:
    `没有发现 TrustPic v0 能读取的 AI 来源、AI 标记或局部差异线索。`
