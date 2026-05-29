@@ -8,7 +8,7 @@ This is the recommended v0 overseas deployment shape. TrustPic v0 analyzes one u
 
 - Web: Cloudflare Pages.
 - API: containerized FastAPI service.
-  - Recommended first deployment: Render Web Service or Fly.io container app behind `api.trustpic.example.com`.
+  - Recommended first deployment: Railway service behind `api.trustpic.example.com`.
   - Cloudflare-only path: Cloudflare Containers fronted by a Worker, once we are ready to operate that beta-style path.
 - Database: none for v0.
 - Object storage: none for v0.
@@ -64,19 +64,30 @@ Health check:
 /api/v1/health
 ```
 
-## Render Setup
+## Railway Setup
 
-The repository includes `render.yaml`.
+The backend is configured for Railway with `backend/Dockerfile` and `backend/railway.json`.
 
-Recommended Render service:
+Recommended Railway service:
 
-- Type: Web Service.
-- Runtime: Docker.
-- Root directory: `backend`.
-- Plan: Standard or equivalent 2 GB+ RAM instance.
+- Source: this GitHub repository.
+- Root directory: `/backend`.
+- Config file path: `/backend/railway.json`.
+- Builder: Dockerfile.
 - Health check path: `/api/v1/health`.
+- Start command: leave empty; the Dockerfile command is used.
 
-After the API URL is assigned, set `TRUSTPIC_ALLOWED_ORIGINS` to the final Cloudflare Pages domain or custom frontend domain.
+Railway provides a `PORT` environment variable for public services. The Dockerfile listens on `${PORT:-8000}` so the same image works locally and on Railway.
+
+Set Railway variables:
+
+```bash
+TRUSTPIC_ALLOWED_ORIGINS=https://trustpic.example.com,https://www.trustpic.example.com
+TRUSTPIC_MAX_UPLOAD_MB=15
+TRUSTPIC_MAX_PIXELS=40000000
+```
+
+During preview deployment, include the Cloudflare Pages preview URL in `TRUSTPIC_ALLOWED_ORIGINS`. After the final domain is attached, remove preview origins unless still needed.
 
 ## Cloudflare Pages Setup
 
@@ -112,7 +123,7 @@ Both must use HTTPS.
 Cloudflare DNS:
 
 - `trustpic.example.com`: attach as the custom domain on the Pages project.
-- `api.trustpic.example.com`: CNAME to the backend host if using Render/Fly, or route to the Worker if using Cloudflare Containers.
+- `api.trustpic.example.com`: CNAME to the Railway-provided target, or route to the Worker if using Cloudflare Containers later.
 
 After the frontend domain is final, update the backend:
 
@@ -152,13 +163,13 @@ The Web app can be cached normally as static assets. `web/public/_headers` adds 
 
 ## Deployment Order
 
-1. Deploy backend container and verify:
+1. Deploy backend container on Railway and verify:
 
 ```bash
 curl https://api.trustpic.example.com/api/v1/health
 ```
 
-2. Set backend `TRUSTPIC_ALLOWED_ORIGINS` to the Cloudflare Pages preview URL while testing.
+2. Set Railway `TRUSTPIC_ALLOWED_ORIGINS` to the Cloudflare Pages preview URL while testing.
 3. Create Cloudflare Pages project from `web`.
 4. Set Pages `VITE_API_BASE` to the backend URL and `VITE_DEFAULT_LOCALE=en-US`.
 5. Deploy Pages and test a real image upload.
