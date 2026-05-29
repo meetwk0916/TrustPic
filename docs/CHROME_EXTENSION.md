@@ -1,6 +1,6 @@
 # TrustPic Chrome Extension
 
-Last aligned: 2026-05-28
+Last aligned: 2026-05-29
 
 The Chrome extension is a self-use right-click client for the existing TrustPic API. It does not run evidence analysis locally. It fetches the selected page image, sends it to `POST /api/v1/analyze`, and renders the returned `interpretation` report in Chrome Side Panel.
 
@@ -13,7 +13,7 @@ The Chrome extension is a self-use right-click client for the existing TrustPic 
   - the extension opens Chrome Side Panel immediately, fetches the image bytes, calls the configured API, and updates the report in the side panel
   - the TrustPic menu is registered only for Chrome's native image context, so blank-area right-clicks do not show it
 - Side Panel supports:
-  - language selected automatically from the browser UI language
+  - language selected automatically from the browser UI language, with a manual Chinese/English switch in the panel header
   - conclusion, confidence, AI evidence alert, core evidence, local difference analysis, boundary notes, and heatmap display
   - expandable evidence explanations and technical details, aligned with the Web report structure
 - Store build defaults to `https://trustpic-production.up.railway.app` and does not expose an API input.
@@ -63,7 +63,7 @@ For unsupported image viewers:
 
 - The extension does not persist uploaded originals.
 - The extension stores the latest image URL, latest analysis status, and the latest returned report in Chrome local storage.
-- The extension locale follows the browser UI language: Chinese browser UI uses `zh-CN`; other languages use `en-US`.
+- The extension locale defaults from the browser UI language, then can be switched manually. The selected locale is stored locally and reused for later right-click analyses.
 - URL analysis depends on Chrome extension host permissions and whether the URL returns image bytes.
 - Authenticated, canvas-rendered, blob, or dynamically generated images may not be recoverable as original files through the extension.
 - Right-click analysis usually sees the clicked element's image URL, not necessarily the publisher's original file.

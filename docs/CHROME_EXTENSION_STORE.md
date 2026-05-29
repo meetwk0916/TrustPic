@@ -25,7 +25,7 @@ Detailed description:
 ```text
 TrustPic provides a single-image evidence report from the browser context menu.
 
-Right-click an image and choose "Analyze image with TrustPic". The report opens in Chrome Side Panel and summarizes readable evidence such as AI-related markers, source records, photo/save metadata, and local difference clues.
+Right-click an image and choose "Analyze image with TrustPic". The report opens in Chrome Side Panel and summarizes readable evidence such as AI-related markers, source records, camera-capture metadata, software-save metadata, and local difference clues.
 
 TrustPic is evidence-first. It does not claim that an image is real, fake, authentic, or AI-generated when readable evidence is absent. The report shows confidence and explains what each signal can and cannot show.
 ```

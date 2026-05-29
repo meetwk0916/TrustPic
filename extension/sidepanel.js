@@ -41,9 +41,11 @@ const COPY = {
 
 const state = {
   locale: browserLocale(),
+  lastSourceUrl: "",
 };
 
 const elements = {
+  localeButton: document.getElementById("localeButton"),
   notice: document.getElementById("notice"),
   sourceSection: document.getElementById("sourceSection"),
   sourceLink: document.getElementById("sourceLink"),
@@ -65,7 +67,10 @@ const elements = {
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
-  const saved = await chrome.storage.local.get(["activeAnalysis", "lastError", "lastReport", "lastSourceUrl"]);
+  const saved = await chrome.storage.local.get(["activeAnalysis", "lastError", "lastReport", "lastSourceUrl", "locale"]);
+  if (isSupportedLocale(saved.locale)) {
+    state.locale = saved.locale;
+  }
 
   applyCopy();
   bindEvents();
@@ -73,6 +78,8 @@ async function init() {
 }
 
 function bindEvents() {
+  elements.localeButton.addEventListener("click", toggleLocale);
+
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== "local") return;
     const next = {};
@@ -96,7 +103,7 @@ function applyCopy() {
   document.getElementById("heatmapLabel").textContent = copy.heatmap;
   document.getElementById("heatmap").alt = copy.heatmapAlt;
   document.getElementById("notesLabel").textContent = copy.notes;
-  document.getElementById("localeBadge").textContent = state.locale;
+  elements.localeButton.textContent = state.locale === "en-US" ? "中文" : "English";
 }
 
 function renderStoredState(saved) {
@@ -122,6 +129,7 @@ function renderStoredState(saved) {
 }
 
 function renderSource(sourceUrl) {
+  state.lastSourceUrl = sourceUrl;
   elements.sourceSection.hidden = false;
   elements.sourceLink.href = sourceUrl;
   elements.sourceLink.textContent = sourceUrl;
@@ -249,9 +257,55 @@ function hideNotice() {
   elements.notice.textContent = "";
 }
 
+async function toggleLocale() {
+  state.locale = state.locale === "en-US" ? "zh-CN" : "en-US";
+  await chrome.storage.local.set({ locale: state.locale });
+  await notifyLocaleChanged();
+  applyCopy();
+
+  if (!state.lastSourceUrl) return;
+  await rerunLastAnalysis();
+}
+
+async function notifyLocaleChanged() {
+  try {
+    await chrome.runtime.sendMessage({
+      type: "trustpic-locale-changed",
+      locale: state.locale,
+    });
+  } catch {
+    // The side panel still updates immediately; the worker will sync on next startup.
+  }
+}
+
+async function rerunLastAnalysis() {
+  const sourceUrl = state.lastSourceUrl;
+  showNotice(COPY[state.locale].loading);
+  try {
+    await chrome.runtime.sendMessage({
+      type: "trustpic-analyze-source-url",
+      sourceUrl,
+      locale: state.locale,
+    });
+  } catch (error) {
+    await chrome.storage.local.set({
+      activeAnalysis: {
+        status: "error",
+        sourceUrl,
+        completedAt: Date.now(),
+      },
+      lastError: error instanceof Error ? error.message : COPY[state.locale].requestFailed,
+    });
+  }
+}
+
 function browserLocale() {
   const languages = [chrome.i18n?.getUILanguage?.(), navigator.language].filter(Boolean);
   return languages.some((language) => String(language).toLowerCase().startsWith("zh")) ? "zh-CN" : "en-US";
+}
+
+function isSupportedLocale(value) {
+  return value === "zh-CN" || value === "en-US";
 }
 
 function supportedImageType(contentType, url) {

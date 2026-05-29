@@ -180,7 +180,21 @@ def test_rich_exif_can_raise_originality_when_source_record_is_absent() -> None:
         gb45438=_signal(details={"matched_terms": []}),
         ela=_signal(status="ok", details={"mean_error": 0.4}),
         c2pa=_signal(),
-        exif=_signal(status="present", detected=True, details={"field_count": 6}),
+        exif=_signal(
+            status="present",
+            detected=True,
+            details={
+                "field_count": 6,
+                "fields": {
+                    "Make": "TrustPic Camera",
+                    "Model": "V0",
+                    "DateTimeOriginal": "2026:05:29 12:00:00",
+                    "ExposureTime": "1/60",
+                    "FNumber": "2.8",
+                    "ISO": "100",
+                },
+            },
+        ),
     )
 
     interpretation = build_interpretation(signals)
@@ -190,3 +204,65 @@ def test_rich_exif_can_raise_originality_when_source_record_is_absent() -> None:
     assert source_record.status_label == "未发现"
     assert "当前文件原始性判断：原始性较强" in source_record.means
     assert source_record.details["originality_label"] == "原始性较强"
+
+
+def test_software_only_exif_does_not_become_capture_evidence() -> None:
+    signals = ReportSignals(
+        gb45438=_signal(details={"matched_terms": []}),
+        ela=_signal(status="ok", details={"mean_error": 0.4}),
+        c2pa=_signal(),
+        exif=_signal(
+            status="present",
+            detected=True,
+            details={
+                "field_count": 3,
+                "fields": {
+                    "ExifOffset": "58",
+                    "Orientation": "1",
+                    "Software": "Picasa",
+                },
+            },
+        ),
+    )
+
+    interpretation = build_interpretation(signals)
+
+    assert interpretation.confidence_label == "有限"
+    assert interpretation.conclusion == "没有发现 TrustPic v0 能读取的 AI 来源、AI 标记或局部差异线索。"
+    source_record = interpretation.evidence_chain[2]
+    assert source_record.details["originality_label"] == "原始性有限"
+    assert "截图、转发、转码或二次保存" in source_record.means
+    exif_evidence = interpretation.evidence_chain[3]
+    assert exif_evidence.title == "拍摄/编辑信息"
+    assert exif_evidence.status_label == "需留意"
+    assert exif_evidence.summary == "只发现软件保存或文件结构类信息，未发现相机拍摄字段。"
+    assert "Software=Picasa" in exif_evidence.means
+
+
+def test_software_only_exif_can_render_english_interpretation() -> None:
+    signals = ReportSignals(
+        gb45438=_signal(details={"matched_terms": []}),
+        ela=_signal(status="ok", details={"mean_error": 0.4}),
+        c2pa=_signal(),
+        exif=_signal(
+            status="present",
+            detected=True,
+            details={
+                "field_count": 3,
+                "fields": {
+                    "ExifOffset": "58",
+                    "Orientation": "1",
+                    "Software": "Picasa",
+                },
+            },
+        ),
+    )
+
+    interpretation = build_interpretation(signals, locale="en-US")
+
+    assert interpretation.confidence_label == "Limited"
+    assert interpretation.conclusion == "No readable AI source, AI marker, or local-difference clue was found by TrustPic v0."
+    exif_evidence = interpretation.evidence_chain[3]
+    assert exif_evidence.status_label == "Needs attention"
+    assert exif_evidence.summary == "Only software-save or file-structure metadata was found; no camera-capture field was found."
+    assert "Software=Picasa" in exif_evidence.means

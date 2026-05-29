@@ -91,8 +91,8 @@ This section also carries the file-originality reading. Keep the title as `图�
 
 Supported file-originality labels:
 
-- `原始性较强`: the current file has a valid source record or rich photo/save metadata.
-- `原始性有限`: the current file has incomplete source evidence, partial metadata, or no readable source/EXIF evidence.
+- `原始性较强`: the current file has a valid source record or rich camera-capture metadata.
+- `原始性有限`: the current file has incomplete source evidence, partial camera-capture metadata, software-only EXIF, or no readable source/EXIF evidence.
 - `疑似二次采集`: reserved for future screenshot, platform re-encode, or screen-photo signals. Do not emit this label until the evidence module actually supports it.
 - `无法判断`: the source-record check did not complete.
 
@@ -121,18 +121,24 @@ If absent:
 
 - Status: `未发现`
 - User meaning: TrustPic v0 did not find a readable source record.
-- File originality: usually `原始性有限`; rich EXIF may raise the originality reading, but does not create source provenance.
+- File originality: usually `原始性有限`; rich camera-capture EXIF may raise the originality reading, but does not create source provenance.
 - Boundary: this is common and does not mean the image is AI-generated, edited, or authentic. Screenshots, forwarding, platform downloads, re-encoding, and secondary saves can all lose source records.
 
 ### 拍摄/编辑信息
 
-This covers EXIF metadata.
+This covers EXIF metadata. It separates camera-capture fields from software-only or file-structure fields.
 
-If detected:
+If camera-capture fields are detected:
 
 - Status: `支持证据`
-- User meaning: the file contains photo or edit metadata, such as camera, software, capture parameters, or save information.
+- User meaning: the file contains camera or capture-parameter metadata, such as device model, capture time, lens, exposure, or GPS fields.
 - Boundary: EXIF can be modified or removed. It cannot alone prove authenticity or exclude later editing.
+
+If only software-save or file-structure fields are detected:
+
+- Status: `需留意`
+- User meaning: the file contains metadata such as `Software`, `Orientation`, or `ExifOffset`, but no camera-capture field. For example, `Software=Picasa` means the file may have been saved, exported, or processed by that software; it is not evidence that the image came directly from a camera.
+- Boundary: this does not prove authenticity, AI generation, camera capture, or manipulation on its own.
 
 If absent:
 
