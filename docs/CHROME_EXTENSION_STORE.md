@@ -49,6 +49,12 @@ TrustPic processes only the image selected by the user through the right-click m
 
 TrustPic does not sell user data, does not run advertising tracking, and does not use the extension for cross-site behavioral profiling.
 
+Privacy policy URL:
+
+```text
+https://<cloudflare-pages-production-domain>/privacy.html
+```
+
 ## Reviewer Notes
 
 - Manifest V3 extension.

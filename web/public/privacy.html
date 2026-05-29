@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TrustPic Privacy Policy</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.6;
+        color: #1f2937;
+        background: #f8fafc;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 48px 20px 64px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 34px;
+        line-height: 1.15;
+        color: #111827;
+      }
+
+      h2 {
+        margin: 32px 0 8px;
+        font-size: 20px;
+        color: #111827;
+      }
+
+      p,
+      li {
+        font-size: 16px;
+      }
+
+      .updated {
+        margin: 0 0 28px;
+        color: #64748b;
+      }
+
+      a {
+        color: #2563eb;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color: #d1d5db;
+          background: #0f172a;
+        }
+
+        h1,
+        h2 {
+          color: #f8fafc;
+        }
+
+        .updated {
+          color: #94a3b8;
+        }
+
+        a {
+          color: #93c5fd;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>TrustPic Privacy Policy</h1>
+      <p class="updated">Last updated: May 29, 2026</p>
+
+      <p>
+        TrustPic is a single-image evidence report tool. The Chrome extension lets a user right-click one image and
+        generate an evidence report for that selected image.
+      </p>
+
+      <h2>Data processed</h2>
+      <p>
+        When the user chooses the TrustPic right-click action, the extension fetches the selected image and sends that
+        image to the TrustPic API for analysis. The API returns an evidence report, including readable metadata and
+        analysis results for that image.
+      </p>
+
+      <h2>Local storage</h2>
+      <p>The extension stores the following data locally in Chrome:</p>
+      <ul>
+        <li>the latest selected image URL;</li>
+        <li>the latest analysis status;</li>
+        <li>the latest returned evidence report;</li>
+        <li>the latest error message, if analysis fails;</li>
+        <li>the user's language preference.</li>
+      </ul>
+      <p>This local storage is used only to display the report and remember the selected language.</p>
+
+      <h2>Retention</h2>
+      <p>
+        TrustPic does not intentionally store uploaded original images after analysis. The extension does not save image
+        files locally. The latest report state may remain in Chrome local storage until the user clears extension data or
+        replaces it with another analysis.
+      </p>
+
+      <h2>Sharing and sale</h2>
+      <p>
+        TrustPic does not sell user data. TrustPic does not use the extension for advertising tracking, analytics SDKs,
+        or cross-site behavioral profiling.
+      </p>
+
+      <h2>Website access</h2>
+      <p>
+        Host access is used only after the user right-clicks a specific image and starts analysis. The extension does
+        not automatically scan webpages, read page content, or analyze images without user action.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        For privacy questions, contact the developer through the Chrome Web Store listing or the project repository.
+      </p>
+    </main>
+  </body>
+</html>
