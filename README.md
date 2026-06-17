@@ -19,6 +19,7 @@ The v0 goal is not to prove whether every image is real or AI-generated. The v0 
 - [overseas cloud deployment](docs/CLOUD_DEPLOYMENT.md)
 - [China Web + Mini Program architecture](docs/CHINA_WEB_MINIPROGRAM_ARCHITECTURE.md)
 - [Chrome extension](docs/CHROME_EXTENSION.md)
+- [offline extension architecture](docs/OFFLINE_EXTENSION.md)
 - [Chrome Web Store notes](docs/CHROME_EXTENSION_STORE.md)
 - [public dataset suite example](docs/public-dataset-suite.example.json)
 - [first-phase minimum coverage suite](docs/public-dataset-first-phase.example.json)
@@ -46,14 +47,12 @@ npm run dev
 
 Open `http://127.0.0.1:5173`.
 
-Chrome extension:
+Chrome extension (runs fully offline, no backend needed):
 
 ```bash
-# Store build uses https://trustpic-production.up.railway.app by default.
-# For local development, start the backend first, then load extension/ as an unpacked extension in Chrome.
+# Load extension/ as an unpacked extension in Chrome.
 # Right-click a page image and choose "Analyze image with TrustPic".
-cd backend
-.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+# All analysis runs locally in the browser; the image is never sent to a server.
 ```
 
 Chrome Web Store package and privacy policy:

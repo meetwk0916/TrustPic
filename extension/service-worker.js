@@ -1,5 +1,4 @@
 const MENU_ID = "trustpic-analyze-image";
-const DEFAULT_API_BASE = "https://trustpic-production.up.railway.app";
 
 syncContextMenu();
 
@@ -21,24 +20,10 @@ addChromeListener(chrome.contextMenus?.onClicked, async (info, tab) => {
 
   const sourceUrl = info.srcUrl;
   if (!sourceUrl) return;
-  await analyzeSelectedImage(sourceUrl, await storedLocale());
-});
 
-addChromeListener(chrome.runtime?.onMessage, (message) => {
-  const locale = isSupportedLocale(message?.locale) ? message.locale : browserLocale();
-  if (message?.type === "trustpic-locale-changed") {
-    installContextMenus(locale);
-    return;
-  }
-  if (message?.type !== "trustpic-analyze-source-url" || !message.sourceUrl) return;
-  installContextMenus(locale);
-  analyzeSelectedImage(String(message.sourceUrl), locale);
-});
-
-async function analyzeSelectedImage(sourceUrl, locale) {
   await chrome.storage.local.set({
     activeAnalysis: {
-      status: "running",
+      status: "requested",
       sourceUrl,
       startedAt: Date.now(),
     },
@@ -46,42 +31,14 @@ async function analyzeSelectedImage(sourceUrl, locale) {
     lastError: null,
     lastSourceUrl: sourceUrl,
   });
+});
 
-  chrome.action.setBadgeText({ text: "..." });
-  chrome.action.setBadgeBackgroundColor({ color: "#d97706" });
-
-  try {
-    const report = await analyzeImageUrl({
-      sourceUrl,
-      apiBase: DEFAULT_API_BASE,
-      locale,
-    });
-
-    await chrome.storage.local.set({
-      activeAnalysis: {
-        status: "complete",
-        sourceUrl,
-        completedAt: Date.now(),
-      },
-      lastReport: report,
-      lastSourceUrl: sourceUrl,
-      lastAnalyzedAt: Date.now(),
-      lastError: null,
-    });
-    chrome.action.setBadgeText({ text: "" });
-  } catch (error) {
-    await chrome.storage.local.set({
-      activeAnalysis: {
-        status: "error",
-        sourceUrl,
-        completedAt: Date.now(),
-      },
-      lastError: error instanceof Error ? error.message : "Analysis failed",
-    });
-    chrome.action.setBadgeText({ text: "!" });
-    chrome.action.setBadgeBackgroundColor({ color: "#dc2626" });
+addChromeListener(chrome.runtime?.onMessage, (message) => {
+  if (message?.type === "trustpic-locale-changed") {
+    const locale = isSupportedLocale(message.locale) ? message.locale : browserLocale();
+    installContextMenus(locale);
   }
-}
+});
 
 function addChromeListener(event, listener) {
   if (event?.addListener) {
@@ -130,41 +87,6 @@ function openReportPanel(tab) {
   }
 }
 
-async function analyzeImageUrl({ sourceUrl, apiBase, locale }) {
-  const imageResponse = await fetch(sourceUrl, {
-    credentials: "include",
-    cache: "no-store",
-  });
-  if (!imageResponse.ok) {
-    throw new Error(`Image request failed with ${imageResponse.status}`);
-  }
-
-  const sourceBlob = await imageResponse.blob();
-  const contentType = supportedImageType(sourceBlob.type, sourceUrl);
-  if (!contentType) {
-    throw new Error("This image format is not supported. Use JPG, PNG, or WebP.");
-  }
-
-  const imageBlob = sourceBlob.type === contentType ? sourceBlob : sourceBlob.slice(0, sourceBlob.size, contentType);
-  const formData = new FormData();
-  formData.append("file", imageBlob, filenameFromUrl(sourceUrl, contentType));
-
-  const response = await fetch(analyzeEndpoint(apiBase, locale), {
-    method: "POST",
-    body: formData,
-  });
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null);
-    throw new Error(payload?.detail || `TrustPic API failed with ${response.status}`);
-  }
-  return response.json();
-}
-
-function analyzeEndpoint(apiBase, locale) {
-  const base = String(apiBase || DEFAULT_API_BASE).replace(/\/+$/, "");
-  return `${base}/api/v1/analyze?locale=${encodeURIComponent(locale || "zh-CN")}`;
-}
-
 function browserLocale() {
   const languages = [chrome.i18n?.getUILanguage?.(), navigator.language].filter(Boolean);
   return languages.some((language) => String(language).toLowerCase().startsWith("zh")) ? "zh-CN" : "en-US";
@@ -188,29 +110,4 @@ function menuCopy(locale = browserLocale()) {
   return {
     analyze: "Analyze image with TrustPic",
   };
-}
-
-function supportedImageType(contentType, url) {
-  const normalized = String(contentType || "").split(";")[0].trim().toLowerCase();
-  if (["image/jpeg", "image/png", "image/webp"].includes(normalized)) return normalized;
-
-  const lowerUrl = String(url || "").split("?")[0].toLowerCase();
-  if (lowerUrl.startsWith("data:image/jpeg") || lowerUrl.startsWith("data:image/jpg")) return "image/jpeg";
-  if (lowerUrl.startsWith("data:image/png")) return "image/png";
-  if (lowerUrl.startsWith("data:image/webp")) return "image/webp";
-  if (lowerUrl.endsWith(".jpg") || lowerUrl.endsWith(".jpeg")) return "image/jpeg";
-  if (lowerUrl.endsWith(".png")) return "image/png";
-  if (lowerUrl.endsWith(".webp")) return "image/webp";
-  return null;
-}
-
-function filenameFromUrl(url, contentType) {
-  const fallback = contentType.includes("png") ? "image.png" : contentType.includes("webp") ? "image.webp" : "image.jpg";
-  try {
-    const pathname = new URL(url).pathname;
-    const segment = pathname.split("/").filter(Boolean).pop();
-    return segment || fallback;
-  } catch {
-    return fallback;
-  }
 }

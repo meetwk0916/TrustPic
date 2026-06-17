@@ -41,17 +41,17 @@ TrustPic lets the user right-click one image in Chrome and generate a single evi
 - `contextMenus`: required to show the "Analyze image with TrustPic" action when the user right-clicks an image. This is the extension's main entry point.
 - `sidePanel`: required to show the TrustPic evidence report in Chrome Side Panel after the user right-clicks an image.
 - `storage`: required to store the current report state and language preference locally in Chrome. TrustPic does not use storage for tracking, advertising, or cross-site profiling.
-- `host_permissions: <all_urls>`: required to fetch the image URL that the user explicitly selects through the right-click image menu. The extension does not scan webpages automatically, does not read page content, and does not access images unless the user starts the analysis from the context menu.
+- `host_permissions: <all_urls>`: required to fetch the image URL that the user explicitly selects through the right-click image menu, so it can be analyzed on-device. The extension does not scan webpages automatically, does not read page content, and does not access images unless the user starts the analysis from the context menu.
 
 ## Remote Code Declaration
 
 ```text
-TrustPic does not use remote code. All extension JavaScript, HTML, CSS, and assets are packaged inside the extension. The extension only sends the user-selected image to the TrustPic API and receives JSON/image report data. The API response is data, not executable code.
+TrustPic does not use remote code. All extension JavaScript, HTML, CSS, and assets are packaged inside the extension. All image analysis runs locally in the browser. The extension does not contact any backend API and does not transmit the selected image off-device.
 ```
 
 ## Privacy Disclosure Draft
 
-TrustPic processes only the image selected by the user through the right-click menu. The extension fetches that image and sends it to the TrustPic API for analysis. Uploaded image bytes are not stored by the extension. The extension stores only the latest image URL, latest analysis status, and latest returned report in Chrome local storage.
+TrustPic processes only the image selected by the user through the right-click menu. The extension fetches that image and analyzes it locally in the browser. The selected image is not uploaded to any server and is not transmitted off-device. The extension stores only the latest image URL, latest analysis status, and latest returned report in Chrome local storage.
 
 TrustPic does not sell user data, does not run advertising tracking, and does not use the extension for cross-site behavioral profiling.
 
@@ -68,5 +68,5 @@ https://<cloudflare-pages-production-domain>/privacy.html
 - No remotely hosted executable code.
 - No analytics SDK.
 - No user account requirement.
-- The backend API is `https://trustpic-production.up.railway.app`.
+- All analysis runs locally in the browser; the extension does not contact a backend API.
 - The extension requires broad host access because the user can right-click images from arbitrary webpages.

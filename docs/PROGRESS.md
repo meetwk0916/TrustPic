@@ -485,6 +485,19 @@ git diff --check
 
 Result: manifest JSON and extension JavaScript syntax checks passed, Chrome Web Store ZIP was regenerated, the ZIP manifest contains the single-purpose description, and no whitespace errors were found.
 
+Validated on 2026-06-17 after the Chrome extension was made fully self-contained (no backend):
+
+- The backend evidence pipeline was ported to buildless JS under `extension/analysis/`: `c2pa.js` (heuristic, presence + AI-term read, no signature verification), `gb45438.js`, `exif.js`, `ela.js` (Canvas/OffscreenCanvas), `interpretation.js` (full bilingual port), plus `analyze.js` and `run.js`.
+- `service-worker.js` now only registers the menu, opens the Side Panel, and records the request. `sidepanel.js` is an ES module that fetches the image and runs the analysis locally. No `POST /api/v1/analyze` call remains.
+- C2PA offline mode reports presence and AI-related clues but never `Valid`, so a detected manifest surfaces as "needs attention".
+
+```bash
+Get-ChildItem extension\*.js, extension\analysis\*.js | % { node --check $_.FullName }
+node extension/test/analysis.test.mjs
+```
+
+Result: all extension JS files pass `node --check`; `extension/test/analysis.test.mjs` reports `15 checks passed`, covering GB 45438 marker/XMP, EXIF JPEG APP1 parsing, heuristic C2PA detection, the ELA tile math, and bilingual interpretation parity with the backend report contract.
+
 ## Git And Index
 
 - Remote: `https://github.com/meetwk0916/TrustPic`

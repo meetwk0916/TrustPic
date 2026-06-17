@@ -2,7 +2,7 @@
 
 Last aligned: 2026-05-29
 
-The Chrome extension has one purpose: right-click one image in Chrome and generate a TrustPic evidence report for that selected image. It does not run evidence analysis locally. It fetches the selected page image, sends it to `POST /api/v1/analyze`, and renders the returned `interpretation` report in Chrome Side Panel.
+The Chrome extension has one purpose: right-click one image in Chrome and generate a TrustPic evidence report for that selected image. It runs the full evidence analysis **locally in the browser** — it fetches the selected image, inspects it on-device (C2PA, GB 45438/TC260, EXIF, ELA), and renders the `interpretation` report in Chrome Side Panel. No backend server is required and the image bytes never leave the browser.
 
 ## Current Shape
 
@@ -10,28 +10,25 @@ The Chrome extension has one purpose: right-click one image in Chrome and genera
 - Right-click image analysis:
   - right-click an image element on a page or standalone image page
   - choose `用 TrustPic 分析图片` on Chinese Chrome, or `Analyze image with TrustPic` on other Chrome UI languages
-  - the extension opens Chrome Side Panel immediately, fetches the image bytes, calls the configured API, and updates the report in the side panel
+  - the extension opens Chrome Side Panel immediately, fetches the image bytes, analyzes them locally in the browser, and updates the report in the side panel
   - the TrustPic menu is registered only for Chrome's native image context, so blank-area right-clicks do not show it
 - Side Panel supports:
   - language selected automatically from the browser UI language, with a manual Chinese/English switch in the panel header
   - conclusion, confidence, AI evidence alert, core evidence, local difference analysis, boundary notes, and heatmap display
   - expandable evidence explanations and technical details, aligned with the Web report structure
-- Store build defaults to `https://trustpic-production.up.railway.app` and does not expose an API input.
+- All analysis runs on-device; the extension does not call any backend API and does not send the image anywhere.
 
-## Run The API
+## Architecture
 
-Start the backend first:
+All evidence analysis runs inside the extension. There is no API to run.
 
-```bash
-cd backend
-.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
+- `service-worker.js` registers the right-click menu, opens the Side Panel, and records the selected image URL.
+- `sidepanel.js` (ES module) fetches the image, runs the local pipeline in `analysis/`, and renders the report.
+- `analysis/` contains buildless JS ports of the evidence modules: `c2pa.js`, `gb45438.js`, `exif.js`, `ela.js`, `interpretation.js`, plus the `analyze.js` orchestrator and `run.js` fetch helper.
 
-The extension defaults to:
+The optional FastAPI backend in `backend/` still powers the Web app, but the extension no longer depends on it. See [offline extension notes](OFFLINE_EXTENSION.md).
 
-```text
-https://trustpic-production.up.railway.app
-```
+C2PA note: offline mode detects and reads a C2PA/JUMBF manifest and flags AI-related terms, but it cannot cryptographically verify the signature, so a detected manifest is reported as "needs attention" rather than a verified source.
 
 ## Load In Chrome
 

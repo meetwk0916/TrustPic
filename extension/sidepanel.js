@@ -1,3 +1,5 @@
+import { runAnalysis } from "./analysis/run.js";
+
 const COPY = {
   "zh-CN": {
     subtitle: "右键图片证据报告",
@@ -42,6 +44,7 @@ const COPY = {
 const state = {
   locale: browserLocale(),
   lastSourceUrl: "",
+  processedRequestAt: 0,
 };
 
 const elements = {
@@ -75,6 +78,7 @@ async function init() {
   applyCopy();
   bindEvents();
   renderStoredState(saved);
+  maybeProcessRequest(saved.activeAnalysis);
 }
 
 function bindEvents() {
@@ -87,7 +91,59 @@ function bindEvents() {
       next[key] = change.newValue;
     }
     renderStoredState(next);
+    if ("activeAnalysis" in next) {
+      maybeProcessRequest(next.activeAnalysis);
+    }
   });
+}
+
+function maybeProcessRequest(activeAnalysis) {
+  if (!activeAnalysis || activeAnalysis.status !== "requested" || !activeAnalysis.sourceUrl) {
+    return;
+  }
+  if (activeAnalysis.startedAt === state.processedRequestAt) {
+    return;
+  }
+  state.processedRequestAt = activeAnalysis.startedAt;
+  runForSource(activeAnalysis.sourceUrl, state.locale);
+}
+
+async function runForSource(sourceUrl, locale) {
+  state.lastSourceUrl = sourceUrl;
+  await chrome.storage.local.set({
+    activeAnalysis: { status: "running", sourceUrl, startedAt: Date.now() },
+    lastReport: null,
+    lastError: null,
+    lastSourceUrl: sourceUrl,
+  });
+
+  setBadge("...", "#d97706");
+
+  try {
+    const report = await runAnalysis(sourceUrl, locale);
+    await chrome.storage.local.set({
+      activeAnalysis: { status: "complete", sourceUrl, completedAt: Date.now() },
+      lastReport: report,
+      lastSourceUrl: sourceUrl,
+      lastAnalyzedAt: Date.now(),
+      lastError: null,
+    });
+    setBadge("", "#d97706");
+  } catch (error) {
+    await chrome.storage.local.set({
+      activeAnalysis: { status: "error", sourceUrl, completedAt: Date.now() },
+      lastError: error instanceof Error ? error.message : COPY[state.locale].requestFailed,
+    });
+    setBadge("!", "#dc2626");
+  }
+}
+
+function setBadge(text, color) {
+  if (!chrome.action?.setBadgeText) return;
+  chrome.action.setBadgeText({ text });
+  if (text && chrome.action.setBadgeBackgroundColor) {
+    chrome.action.setBadgeBackgroundColor({ color });
+  }
 }
 
 function applyCopy() {
@@ -113,7 +169,7 @@ function renderStoredState(saved) {
   if (saved.lastSourceUrl) {
     renderSource(saved.lastSourceUrl);
   }
-  if (saved.activeAnalysis?.status === "running") {
+  if (saved.activeAnalysis?.status === "running" || saved.activeAnalysis?.status === "requested") {
     showNotice(COPY[state.locale].loading);
   }
   if (saved.lastError) {
@@ -264,7 +320,8 @@ async function toggleLocale() {
   applyCopy();
 
   if (!state.lastSourceUrl) return;
-  await rerunLastAnalysis();
+  showNotice(COPY[state.locale].loading);
+  await runForSource(state.lastSourceUrl, state.locale);
 }
 
 async function notifyLocaleChanged() {
@@ -278,27 +335,6 @@ async function notifyLocaleChanged() {
   }
 }
 
-async function rerunLastAnalysis() {
-  const sourceUrl = state.lastSourceUrl;
-  showNotice(COPY[state.locale].loading);
-  try {
-    await chrome.runtime.sendMessage({
-      type: "trustpic-analyze-source-url",
-      sourceUrl,
-      locale: state.locale,
-    });
-  } catch (error) {
-    await chrome.storage.local.set({
-      activeAnalysis: {
-        status: "error",
-        sourceUrl,
-        completedAt: Date.now(),
-      },
-      lastError: error instanceof Error ? error.message : COPY[state.locale].requestFailed,
-    });
-  }
-}
-
 function browserLocale() {
   const languages = [chrome.i18n?.getUILanguage?.(), navigator.language].filter(Boolean);
   return languages.some((language) => String(language).toLowerCase().startsWith("zh")) ? "zh-CN" : "en-US";
@@ -306,29 +342,4 @@ function browserLocale() {
 
 function isSupportedLocale(value) {
   return value === "zh-CN" || value === "en-US";
-}
-
-function supportedImageType(contentType, url) {
-  const normalized = String(contentType || "").split(";")[0].trim().toLowerCase();
-  if (["image/jpeg", "image/png", "image/webp"].includes(normalized)) return normalized;
-
-  const lowerUrl = String(url || "").split("?")[0].toLowerCase();
-  if (lowerUrl.startsWith("data:image/jpeg") || lowerUrl.startsWith("data:image/jpg")) return "image/jpeg";
-  if (lowerUrl.startsWith("data:image/png")) return "image/png";
-  if (lowerUrl.startsWith("data:image/webp")) return "image/webp";
-  if (lowerUrl.endsWith(".jpg") || lowerUrl.endsWith(".jpeg")) return "image/jpeg";
-  if (lowerUrl.endsWith(".png")) return "image/png";
-  if (lowerUrl.endsWith(".webp")) return "image/webp";
-  return null;
-}
-
-function filenameFromUrl(url, contentType) {
-  const fallback = contentType.includes("png") ? "image.png" : contentType.includes("webp") ? "image.webp" : "image.jpg";
-  try {
-    const pathname = new URL(url).pathname;
-    const segment = pathname.split("/").filter(Boolean).pop();
-    return segment || fallback;
-  } catch {
-    return fallback;
-  }
 }

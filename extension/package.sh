@@ -13,6 +13,7 @@ zip -r "$package_name" \
   sidepanel.html \
   sidepanel.css \
   sidepanel.js \
+  analysis \
   icons
 
 echo "$package_name"
